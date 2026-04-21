@@ -105,7 +105,27 @@ for raw_state in np.unique(n1 * 100 + n2):
 
 # save the raw clean array without the matplotlib axes for the slicing test
 clean_path = os.path.join(out_dir, "csd_clean.png")
-plt.imsave(clean_path, signal_display, cmap="inferno", origin="lower")
+
+fig_clean, ax_clean = plt.subplots(figsize=(7, 6.5))
+
+ax_clean.imshow(
+    signal_display,
+    extent=[V_MIN, V_MAX, V_MIN, V_MAX],
+    origin="lower",
+    aspect="equal",
+    interpolation="bilinear",
+    cmap="inferno",
+    vmin=0.0,
+    vmax=1.0,
+)
+
+# remove EVERYTHING visual
+ax_clean.axis("off")
+
+fig_clean.tight_layout()
+fig_clean.savefig(clean_path, dpi=200, bbox_inches="tight", pad_inches=0)
+plt.close(fig_clean)
+
 print(f"saved clean array: {clean_path}")
 
 # plot the final figure with all the matplotlib styling

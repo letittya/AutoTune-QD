@@ -137,3 +137,46 @@ plt.savefig(os.path.join(out_folder, "detections_overlay.png"), dpi=200)
 plt.close()
 
 print("Saved overlay with detected peaks")
+
+
+
+
+
+
+# ── MULTI-SLICE DETECTION (NEXT STEP) ───────────────────────
+
+all_points = []
+
+# choose slices (avoid edges)
+row_indices = np.arange(100, h-100, 20)
+
+for r in row_indices:
+    signal = img_smoothed[r, :]
+
+    peaks, _ = find_peaks(signal, prominence=0.05, distance=15)
+
+    for p in peaks:
+        all_points.append((p, r))  # (x, y)
+
+all_points = np.array(all_points)
+
+print(f"Total detected points from multi-slice: {len(all_points)}")
+
+
+# ── visualize multi-slice points ────────────────────────────
+fig6, ax = plt.subplots(figsize=(6, 6))
+
+ax.imshow(img_smoothed, cmap="inferno")
+
+if len(all_points) > 0:
+    ax.scatter(all_points[:, 0], all_points[:, 1],
+               s=10, color="cyan", label="multi-slice peaks")
+
+ax.set_title("Multi-slice detected points")
+ax.legend()
+
+plt.tight_layout()
+plt.savefig(os.path.join(out_folder, "multi_slice_points.png"), dpi=200)
+plt.close()
+
+print("Saved multi-slice visualization")
