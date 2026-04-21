@@ -57,8 +57,8 @@ signal     = lines_norm + 0.08 + background_drift + charge_noise
 signal     = np.clip(signal, 0, None)
 signal     = signal / signal.max()
 #warp
-WOBBLE_SIGMA     = 8     # px — spatial scale (decreased for faster, more frequent wiggles)
-WOBBLE_AMPLITUDE = 45    # px — shift magnitude (increased for a more dramatic warp)
+WOBBLE_SIGMA     = 15     # px — spatial scale (decreased for faster, more frequent wiggles)
+WOBBLE_AMPLITUDE = 35    # px — shift magnitude (increased for a more dramatic warp)
 
 disp_x = gaussian_filter(
     rng.normal(0, 1, (RESOLUTION, RESOLUTION)), sigma=WOBBLE_SIGMA
@@ -111,17 +111,18 @@ im = ax.imshow(
     cmap="inferno", vmin=0.0, vmax=1.0,
 )
 
-for (s1, s2), (lx, ly) in label_positions.items():
+#the labels 
+"""for (s1, s2), (lx, ly) in label_positions.items():
     ax.text(lx, ly, "({},{})".format(s1, s2),
             color="white", fontsize=7.5, fontweight="bold",
-            ha="center", va="center", alpha=0.85)
+            ha="center", va="center", alpha=0.85)"""
 
 cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-cbar.set_label("dI_SET/dV_g  (arb. units)", fontsize=10)
+cbar.set_label("Charge Transition Signal", fontsize=10)
 cbar.set_ticks([0.0, 0.5, 1.0])
 cbar.set_ticklabels(["low", "mid", "high"])
 
-ax.set_title("Double Quantum Dot -- Charge Stability Diagram",
+ax.set_title("Double Quantum Dot - QArray Charge Stability Diagram",
              fontweight="bold", fontsize=12, pad=10)
 ax.set_xlabel("V_P1  (mV)", fontsize=11)
 ax.set_ylabel("V_P2  (mV)", fontsize=11)

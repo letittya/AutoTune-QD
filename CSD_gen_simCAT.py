@@ -78,7 +78,7 @@ im = ax.imshow(
 )
 
 cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-cbar.set_label("dI_SET/dV_g  (arb. units)", fontsize=10)
+cbar.set_label("Charge Transition Signal", fontsize=10)
 cbar.set_ticks([0.0, 0.5, 1.0])
 cbar.set_ticklabels(["low", "mid", "high"])
 
