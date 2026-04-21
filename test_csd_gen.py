@@ -48,19 +48,17 @@ charge_noise = gaussian_filter(
     rng.normal(0, 1, (RESOLUTION, RESOLUTION)), sigma=5
 ) * 0.07
 
-vx_arr = np.linspace(0, 1, RESOLUTION)
-vy_arr = np.linspace(0, 1, RESOLUTION)
-Vx, Vy = np.meshgrid(vx_arr, vy_arr)
-background_drift = 0.05 * np.sin(2.0 * np.pi * Vx) * np.cos(1.5 * np.pi * Vy)
+background_drift = gaussian_filter(
+    rng.normal(0, 1, (RESOLUTION, RESOLUTION)), sigma=200 
+) * 0.015 
 
 lines_norm = lines / (lines.max() + 1e-12)
 signal     = lines_norm + 0.08 + background_drift + charge_noise
 signal     = np.clip(signal, 0, None)
 signal     = signal / signal.max()
-
 #warp
-WOBBLE_SIGMA     = 22    # px — spatial scale (smaller = faster wiggles)
-WOBBLE_AMPLITUDE = 18    # px — shift magnitude (larger = more dramatic wobble)
+WOBBLE_SIGMA     = 8     # px — spatial scale (decreased for faster, more frequent wiggles)
+WOBBLE_AMPLITUDE = 45    # px — shift magnitude (increased for a more dramatic warp)
 
 disp_x = gaussian_filter(
     rng.normal(0, 1, (RESOLUTION, RESOLUTION)), sigma=WOBBLE_SIGMA
@@ -77,7 +75,6 @@ signal_warped = map_coordinates(
     order=1,
     mode="nearest",
 )
-
 # Gamma stretch after warp
 signal_display = np.power(np.clip(signal_warped, 0, 1), 0.55)
 
