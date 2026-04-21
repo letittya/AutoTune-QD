@@ -1,4 +1,4 @@
-
+import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -7,7 +7,11 @@ from scipy.ndimage import gaussian_filter, map_coordinates
 
 from qarray import DotArray, GateVoltageComposer, charge_state_to_scalar
 
-#model
+# make a folder for the outputs so it doesnt clutter the main directory
+out_dir = "CSD_generated_images"
+os.makedirs(out_dir, exist_ok=True)
+
+# setting up the physics model and capacitance matrices
 Cdd = np.array([[0.0, 0.08], [0.08, 0.0]])
 Cgd = np.array([[1.0, 0.25], [0.25, 1.0]])
 
@@ -19,29 +23,29 @@ model = DotArray(
 RESOLUTION = 500
 V_MIN, V_MAX = -4.0, 4.0
 
+# sweep the voltages
 composer = GateVoltageComposer(n_gate=model.n_gate)
 vg = composer.do2d(
     x_gate=1, x_min=V_MIN, x_max=V_MAX, x_res=RESOLUTION,
     y_gate=2, y_min=V_MIN, y_max=V_MAX, y_res=RESOLUTION,
 )
 
-# ground state
-
+# get the ground state
 n_open = model.ground_state_open(vg)
 z_raw  = charge_state_to_scalar(n_open).astype(np.float64)
 
-#fixel polarity so its 0,0
+# fix the polarity so the origin is exactly bottom left
 z_raw  = z_raw[::-1, ::-1].copy()
 n_open = n_open[::-1, ::-1, :].copy()
 
-#transition lines
+# extract the transition lines using gradients
 gz_y, gz_x = np.gradient(z_raw)
 grad_mag    = np.hypot(gz_x, gz_y)
 core        = gaussian_filter(grad_mag, sigma=1.0)
 glow        = gaussian_filter(grad_mag, sigma=3.5)
 lines       = 0.6 * core + 0.4 * glow
 
-#background noise
+# add some background noise and drift so it looks like real lab data
 rng = np.random.default_rng(seed=7)
 
 charge_noise = gaussian_filter(
@@ -56,9 +60,10 @@ lines_norm = lines / (lines.max() + 1e-12)
 signal     = lines_norm + 0.08 + background_drift + charge_noise
 signal     = np.clip(signal, 0, None)
 signal     = signal / signal.max()
-#warp
-WOBBLE_SIGMA     = 15     # px — spatial scale (decreased for faster, more frequent wiggles)
-WOBBLE_AMPLITUDE = 35    # px — shift magnitude (increased for a more dramatic warp)
+
+# warp the image a bit to simulate experimental wobble
+WOBBLE_SIGMA     = 15     # px spatial scale
+WOBBLE_AMPLITUDE = 35    # px shift magnitude
 
 disp_x = gaussian_filter(
     rng.normal(0, 1, (RESOLUTION, RESOLUTION)), sigma=WOBBLE_SIGMA
@@ -75,18 +80,16 @@ signal_warped = map_coordinates(
     order=1,
     mode="nearest",
 )
-# Gamma stretch after warp
+
+# tweak the contrast with a gamma stretch
 signal_display = np.power(np.clip(signal_warped, 0, 1), 0.55)
 
-#change labels
-# n_open was already flipped, so centroid coords are in the correct frame
+# calc the centroids for the charge states in case we need the labels back later
 n1 = n_open[:, :, 0].astype(int)
 n2 = n_open[:, :, 1].astype(int)
 
-# After flipping both axes, what was V_MIN is now at index 0 of the flipped
-# array.  Build pixel-to-voltage mapping to match the flipped layout
-vx_pixels = np.linspace(V_MIN, V_MAX, RESOLUTION)   # x still goes left→right
-vy_pixels = np.linspace(V_MIN, V_MAX, RESOLUTION)   # y still goes bottom→top
+vx_pixels = np.linspace(V_MIN, V_MAX, RESOLUTION)   
+vy_pixels = np.linspace(V_MIN, V_MAX, RESOLUTION)   
 
 label_positions = {}
 for raw_state in np.unique(n1 * 100 + n2):
@@ -100,7 +103,12 @@ for raw_state in np.unique(n1 * 100 + n2):
         float(vy_pixels[row_idx].mean()),
     )
 
-#plot
+# save the raw clean array without the matplotlib axes for the slicing test
+clean_path = os.path.join(out_dir, "csd_clean.png")
+plt.imsave(clean_path, signal_display, cmap="inferno", origin="lower")
+print(f"saved clean array: {clean_path}")
+
+# plot the final figure with all the matplotlib styling
 fig, ax = plt.subplots(figsize=(7, 6.5))
 
 im = ax.imshow(
@@ -111,7 +119,7 @@ im = ax.imshow(
     cmap="inferno", vmin=0.0, vmax=1.0,
 )
 
-#the labels 
+# commented out the labels for now bc we dont need them
 """for (s1, s2), (lx, ly) in label_positions.items():
     ax.text(lx, ly, "({},{})".format(s1, s2),
             color="white", fontsize=7.5, fontweight="bold",
@@ -129,5 +137,6 @@ ax.set_ylabel("V_P2  (mV)", fontsize=11)
 ax.tick_params(labelsize=9)
 
 fig.tight_layout()
-fig.savefig("csd_realistic.png", dpi=200, bbox_inches="tight")
-print("Saved: csd_realistic.png")
+plot_path = os.path.join(out_dir, "csd_QArray.png")
+fig.savefig(plot_path, dpi=200, bbox_inches="tight")
+print(f"saved plot: {plot_path}")
