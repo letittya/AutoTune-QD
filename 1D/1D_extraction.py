@@ -257,9 +257,141 @@ plt.close()
 print("Saved single RANSAC result")
 
 
+# ── STEP 2: ITERATIVE RANSAC ───────────────────────────────
+from sklearn.linear_model import RANSACRegressor
+
+remaining_points = all_points.copy()
+line_clusters = []
+
+MIN_INLIERS = 80   # 🔑 key parameter (prevents tiny fake lines)
+
+while len(remaining_points) > MIN_INLIERS:
+
+    X = remaining_points[:, 0].reshape(-1, 1)
+    y = remaining_points[:, 1]
+
+    ransac = RANSACRegressor(
+        residual_threshold=5.0,
+        max_trials=500,
+        random_state=0
+    )
+
+    try:
+        ransac.fit(X, y)
+    except ValueError:
+        break
+
+    inlier_mask = ransac.inlier_mask_
+    n_inliers = inlier_mask.sum()
+
+    # stop if line is too small (important)
+    if n_inliers < MIN_INLIERS:
+        break
+
+    # save this line
+    inliers = remaining_points[inlier_mask]
+    line_clusters.append(inliers)
+
+    print(f"Found line {len(line_clusters)} with {n_inliers} points")
+
+    # remove these points
+    remaining_points = remaining_points[~inlier_mask]
+
+print(f"\nTotal lines found: {len(line_clusters)}")
 
 
+# ── visualize iterative lines ──────────────────────────────
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(img_smoothed, cmap="inferno")
 
+colors = plt.cm.tab10(np.linspace(0, 1, max(len(line_clusters), 1)))
+
+for i, pts in enumerate(line_clusters):
+    ax.scatter(pts[:, 0], pts[:, 1],
+               s=6, color=colors[i],
+               label=f"Line {i+1}")
+
+# leftover noise
+if len(remaining_points) > 0:
+    ax.scatter(remaining_points[:, 0], remaining_points[:, 1],
+               s=3, color="white", alpha=0.2, label="noise")
+
+ax.set_title(f"Iterative RANSAC ({len(line_clusters)} lines)")
+ax.legend(fontsize=7)
+
+plt.tight_layout()
+plt.savefig(os.path.join(out_folder, "ransac_iterative.png"), dpi=200)
+plt.close()
+
+print("Saved iterative RANSAC result")
+
+# ── STEP 3: FILTER LINES BY SLOPE ──────────────────────────
+
+filtered_lines = []
+line_slopes = []
+
+for pts in line_clusters:
+    # compute slope using linear fit
+    coef = np.polyfit(pts[:, 0], pts[:, 1], 1)
+    slope = coef[0]
+
+    line_slopes.append(slope)
+
+    # keep only diagonal-ish lines (remove vertical ones)
+    if abs(slope) < 2.0:   # 🔑 threshold
+        filtered_lines.append(pts)
+
+print(f"Filtered lines: {len(filtered_lines)} / {len(line_clusters)}")
+
+
+# ── VISUALIZE FILTERED LINES ───────────────────────────────
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(img_smoothed, cmap="inferno")
+
+colors = plt.cm.tab10(np.linspace(0, 1, len(filtered_lines)))
+
+for i, pts in enumerate(filtered_lines):
+    ax.scatter(pts[:, 0], pts[:, 1],
+               s=6, color=colors[i],
+               label=f"Line {i+1}")
+
+ax.set_title(f"Filtered diagonal lines ({len(filtered_lines)})")
+ax.legend(fontsize=7)
+
+plt.tight_layout()
+plt.savefig(os.path.join(out_folder, "filtered_lines.png"), dpi=200)
+plt.close()
+
+print("Saved filtered lines")
+
+
+# ── STEP 4: EXTRACT FINAL SLOPES + METADATA ────────────────
+
+final_data = []
+
+for i, pts in enumerate(filtered_lines):
+    # fit line again cleanly
+    coef = np.polyfit(pts[:, 0], pts[:, 1], 1)
+    slope = coef[0]
+    intercept = coef[1]
+
+    final_data.append({
+        "line_id": i + 1,
+        "slope": float(slope),
+        "intercept": float(intercept),
+        "num_points": len(pts)
+    })
+
+    print(f"Line {i+1}: slope = {slope:.4f}, points = {len(pts)}")
+
+
+# ── SAVE RESULTS ───────────────────────────────────────────
+import json
+
+with open(os.path.join(out_folder, "extracted_lines.json"), "w") as f:
+    json.dump(final_data, f, indent=4)
+
+print("Saved line data → extracted_lines.json")
 
 
 
