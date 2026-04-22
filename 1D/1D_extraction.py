@@ -257,48 +257,91 @@ plt.close()
 print("Saved single RANSAC result")
 
 
-# ── STEP 2: ITERATIVE RANSAC ───────────────────────────────
+# ── STEP 2: ITERATIVE RANSAC (TWO-PASS) ────────────────────────
 from sklearn.linear_model import RANSACRegressor
 
 remaining_points = all_points.copy()
 line_clusters = []
 
-MIN_INLIERS = 80   # 🔑 key parameter (prevents tiny fake lines)
+MIN_INLIERS = 60  
 
+# 1. Define the rule: Pass 1 is ONLY allowed to find flat lines
+def valid_flat_line(estimator, X, y):
+    return abs(estimator.coef_[0]) < 1.5
+
+# --- PASS 1: Find Diagonal Lines (Normal X, Y) ---
+print("--- PASS 1: Diagonal Lines ---")
 while len(remaining_points) > MIN_INLIERS:
-
     X = remaining_points[:, 0].reshape(-1, 1)
     y = remaining_points[:, 1]
 
+    # Add the rule directly to RANSAC
     ransac = RANSACRegressor(
-        residual_threshold=5.0,
-        max_trials=500,
-        random_state=0
+        residual_threshold=8.0, 
+        max_trials=1000, 
+        random_state=0,
+        is_model_valid=valid_flat_line # 🔥 The magic fix
     )
-
+    
     try:
         ransac.fit(X, y)
+    except ValueError:
+        break # Breaks only if it completely runs out of valid math
+
+    inlier_mask = ransac.inlier_mask_
+    
+    if inlier_mask.sum() < MIN_INLIERS:
+        break # Breaks if the line is too short
+
+    # Save the line
+    slope = ransac.estimator_.coef_[0]
+    intercept = ransac.estimator_.intercept_
+    inliers = remaining_points[inlier_mask]
+    
+    line_clusters.append({
+        "points": inliers, 
+        "slope": slope, 
+        "intercept": intercept, 
+        "type": "diagonal"
+    })
+    print(f"Found diagonal line with {inlier_mask.sum()} points (slope: {slope:.2f})")
+    
+    # Delete points and repeat
+    remaining_points = remaining_points[~inlier_mask]
+
+# --- PASS 2: Find Steep Lines (Swapped Y, X) ---
+print("\n--- PASS 2: Steep Lines (Swapped Axes) ---")
+while len(remaining_points) > MIN_INLIERS:
+    # SWAP X AND Y HERE!
+    X_steep = remaining_points[:, 1].reshape(-1, 1) # Y becomes input
+    y_steep = remaining_points[:, 0]                # X becomes target
+
+    ransac = RANSACRegressor(residual_threshold=5.0, max_trials=500, random_state=0)
+    try:
+        ransac.fit(X_steep, y_steep)
     except ValueError:
         break
 
     inlier_mask = ransac.inlier_mask_
-    n_inliers = inlier_mask.sum()
-
-    # stop if line is too small (important)
-    if n_inliers < MIN_INLIERS:
+    
+    if inlier_mask.sum() < MIN_INLIERS:
         break
 
-    # save this line
     inliers = remaining_points[inlier_mask]
-    line_clusters.append(inliers)
+    
+    # Calculate the TRUE slope and intercept back in the normal coordinate system
+    swapped_slope = ransac.estimator_.coef_[0]
+    swapped_intercept = ransac.estimator_.intercept_
+    
+    true_slope = 1.0 / swapped_slope
+    true_intercept = -swapped_intercept / swapped_slope
 
-    print(f"Found line {len(line_clusters)} with {n_inliers} points")
-
-    # remove these points
+    line_clusters.append({"points": inliers, "slope": true_slope, "intercept": true_intercept, "type": "steep"})
+    print(f"Found steep line with {inlier_mask.sum()} points (slope: {true_slope:.2f})")
+    
     remaining_points = remaining_points[~inlier_mask]
 
 print(f"\nTotal lines found: {len(line_clusters)}")
-
 
 # ── visualize iterative lines ──────────────────────────────
 fig, ax = plt.subplots(figsize=(6, 6))
@@ -306,10 +349,19 @@ ax.imshow(img_smoothed, cmap="inferno")
 
 colors = plt.cm.tab10(np.linspace(0, 1, max(len(line_clusters), 1)))
 
-for i, pts in enumerate(line_clusters):
-    ax.scatter(pts[:, 0], pts[:, 1],
-               s=6, color=colors[i],
-               label=f"Line {i+1}")
+for i, line in enumerate(line_clusters):
+    pts = line["points"]
+    slope = line["slope"]
+    intercept = line["intercept"]
+
+    # original points
+    ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
+
+    # 🔥 FULL LINE (THIS IS THE FIX)
+    x_line = np.array([0, w])
+    y_line = slope * x_line + intercept
+
+    ax.plot(x_line, y_line, color=colors[i], linewidth=2)
 
 # leftover noise
 if len(remaining_points) > 0:
@@ -325,74 +377,127 @@ plt.close()
 
 print("Saved iterative RANSAC result")
 
-# ── STEP 3: FILTER LINES BY SLOPE ──────────────────────────
+# ── STEP 3: CLASSIFY LINES INTO TWO FAMILIES ───────────────
 
-filtered_lines = []
-line_slopes = []
+diagonal_lines = []
+steep_lines = []
 
-for pts in line_clusters:
-    # compute slope using linear fit
-    coef = np.polyfit(pts[:, 0], pts[:, 1], 1)
-    slope = coef[0]
+for line in line_clusters:
+    pts = line["points"]
+    slope = line["slope"]   #  use stored value
 
-    line_slopes.append(slope)
+    if abs(slope) < 1.0:
+        diagonal_lines.append(line)
+    else:
+        steep_lines.append(line)
 
-    # keep only diagonal-ish lines (remove vertical ones)
-    if abs(slope) < 2.0:   # 🔑 threshold
-        filtered_lines.append(pts)
+print(f"Diagonal lines: {len(diagonal_lines)}")
+print(f"Steep lines: {len(steep_lines)}")
 
-print(f"Filtered lines: {len(filtered_lines)} / {len(line_clusters)}")
-
-
-# ── VISUALIZE FILTERED LINES ───────────────────────────────
+# ── visualize both slope families ──────────────────────────
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
 
-colors = plt.cm.tab10(np.linspace(0, 1, len(filtered_lines)))
+# diagonal lines (cyan)
+for line in diagonal_lines:
+    pts = line["points"]
+    ax.scatter(pts[:, 0], pts[:, 1], s=6, color="cyan")
 
-for i, pts in enumerate(filtered_lines):
-    ax.scatter(pts[:, 0], pts[:, 1],
-               s=6, color=colors[i],
-               label=f"Line {i+1}")
+# steep lines (yellow)
+for line in steep_lines:
+    pts = line["points"]
+    ax.scatter(pts[:, 0], pts[:, 1], s=6, color="yellow")
 
-ax.set_title(f"Filtered diagonal lines ({len(filtered_lines)})")
-ax.legend(fontsize=7)
+ax.set_title("Two slope families")
 
 plt.tight_layout()
-plt.savefig(os.path.join(out_folder, "filtered_lines.png"), dpi=200)
+plt.savefig(os.path.join(out_folder, "two_slope_families.png"), dpi=200)
 plt.close()
 
-print("Saved filtered lines")
+print("Saved two slope families visualization")
 
 
-# ── STEP 4: EXTRACT FINAL SLOPES + METADATA ────────────────
+# ── STEP 4: EXTRACT BOTH SLOPE SETS ────────────────────────
 
 final_data = []
 
-for i, pts in enumerate(filtered_lines):
-    # fit line again cleanly
-    coef = np.polyfit(pts[:, 0], pts[:, 1], 1)
-    slope = coef[0]
-    intercept = coef[1]
+# diagonal lines
+for i, line in enumerate(diagonal_lines):
+    pts = line["points"]
+    slope = line["slope"]
+    intercept = line["intercept"]
 
     final_data.append({
         "line_id": i + 1,
+        "type": "diagonal",
         "slope": float(slope),
         "intercept": float(intercept),
         "num_points": len(pts)
     })
 
-    print(f"Line {i+1}: slope = {slope:.4f}, points = {len(pts)}")
+# steep lines
+offset = len(diagonal_lines)
+
+for i, line in enumerate(steep_lines):
+    pts = line["points"]
+    slope = line["slope"]
+    intercept = line["intercept"]
+
+    final_data.append({
+        "line_id": offset + i + 1,
+        "type": "steep",
+        "slope": float(slope),
+        "intercept": float(intercept),
+        "num_points": len(pts)
+    })
 
 
-# ── SAVE RESULTS ───────────────────────────────────────────
+# ── PRINT FINAL RAW LINES ───────────────────────────
+
+print("\nFinal extracted lines:")
+for d in final_data:
+    print(f"{d['type']:8s} | slope = {d['slope']:.4f} | points = {d['num_points']}")
+
+
+# ── OPTIONAL: FILTER OUT SMALL JUNK LINES ───────────
+MIN_POINTS = 60
+
+filtered_lines = [l for l in final_data if l["num_points"] >= MIN_POINTS]
+
+print("\nFiltered lines:")
+for l in filtered_lines:
+    print(f"{l['type']:8s} | slope = {l['slope']:.4f} | points = {l['num_points']}")
+
+
+
+
+
+# ── SAVE RESULTS ────────────────────────────────────
 import json
 
 with open(os.path.join(out_folder, "extracted_lines.json"), "w") as f:
-    json.dump(final_data, f, indent=4)
+    json.dump(filtered_lines, f, indent=4)
 
 print("Saved line data → extracted_lines.json")
 
+
+
+
+
+diag_slopes = [l["slope"] for l in filtered_lines if l["type"] == "diagonal"]
+steep_slopes = [l["slope"] for l in filtered_lines if l["type"] == "steep"]
+
+print("\nFINAL RESULTS:")
+print(f"Diagonal slope (mean): {np.mean(diag_slopes):.4f}")
+print(f"Diagonal std: {np.std(diag_slopes):.4f}")
+print(f"Steep slope (mean): {np.mean(steep_slopes):.4f}")
+print(f"Steep std: {np.std(steep_slopes):.4f}")
+
+ratio = np.mean(steep_slopes) / np.mean(diag_slopes)
+
+print(f"Slope ratio: {ratio:.2f}")
+print("---------------------------------")
+print("STATUS: 1D Feature Extraction Complete.")
 
 
 
