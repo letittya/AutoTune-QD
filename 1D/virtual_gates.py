@@ -77,8 +77,9 @@ plt.close()
 print(f"\nSUCCESS! Saved proof to: {out_img}")
 
 # ── 7. Save the Matrix ──────────────────────────────────────
-d1 = M @ np.array([1, m1])
-d2 = M @ np.array([1, m2])
+M_inv = np.linalg.inv(M)
+d1 = M_inv @ np.array([m1, 1.0])
+d2 = M_inv @ np.array([m2, 1.0])
 cos_theta = np.dot(d1, d2) / (np.linalg.norm(d1) * np.linalg.norm(d2))
 angle = np.degrees(np.arccos(np.clip(cos_theta, -1, 1)))
 print(f"Post-transformation angle: {angle:.2f}° (ideal = 90.00°)")

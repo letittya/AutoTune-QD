@@ -360,12 +360,12 @@ for i, line in enumerate(line_clusters):
     # original points
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
 
-    x_line = np.array([0, w])
-    y_line = slope * x_line + intercept
+    x_line = np.linspace(0, w, 500)
+y_line = slope * x_line + intercept
 
-    valid = (y_line >= 0) & (y_line <= h)
-    if valid.any():
-        ax.plot(x_line[valid], y_line[valid], color=colors[i], linewidth=2)
+valid = (y_line >= 0) & (y_line <= h)
+if valid.any():
+    ax.plot(x_line[valid], y_line[valid], color=colors[i], linewidth=2)
 
 # leftover noise
 if len(remaining_points) > 0:
