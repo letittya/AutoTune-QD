@@ -346,6 +346,9 @@ print(f"\nTotal lines found: {len(line_clusters)}")
 # ── visualize iterative lines ──────────────────────────────
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
+h, w = img_smoothed.shape
+ax.set_xlim(0, w)
+ax.set_ylim(h, 0)
 
 colors = plt.cm.tab10(np.linspace(0, 1, max(len(line_clusters), 1)))
 
@@ -357,11 +360,12 @@ for i, line in enumerate(line_clusters):
     # original points
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
 
-    # 🔥 FULL LINE (THIS IS THE FIX)
     x_line = np.array([0, w])
     y_line = slope * x_line + intercept
 
-    ax.plot(x_line, y_line, color=colors[i], linewidth=2)
+    valid = (y_line >= 0) & (y_line <= h)
+    if valid.any():
+        ax.plot(x_line[valid], y_line[valid], color=colors[i], linewidth=2)
 
 # leftover noise
 if len(remaining_points) > 0:
@@ -495,7 +499,9 @@ print(f"Steep std: {np.std(steep_slopes):.4f}")
 
 ratio = np.mean(steep_slopes) / np.mean(diag_slopes)
 
-print(f"Slope ratio: {ratio:.2f}")
+print(f"Slope ratio (s2/s1 = α21/α12 product proxy): {ratio:.2f}")
+print(f"  → diagonal α ≈ {np.mean(diag_slopes):.4f}  (input Cgd crosstalk was 0.25)")
+print(f"  → steep α    ≈ {1/np.mean(steep_slopes):.4f}  (expected ~0.25 from symmetry)")
 print("---------------------------------")
 print("STATUS: 1D Feature Extraction Complete.")
 

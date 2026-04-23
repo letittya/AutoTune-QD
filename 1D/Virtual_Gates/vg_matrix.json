@@ -11,5 +11,6 @@
     ],
     "diagonal_mean": 0.26313180540125086,
     "steep_mean": 3.7636846651042095,
-    "slope_ratio": 14.303419760925328
+    "slope_ratio": 14.303419760925328,
+    "orthogonality_angle_deg": 37.39631734155071
 }

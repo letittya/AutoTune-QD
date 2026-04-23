@@ -77,14 +77,23 @@ plt.close()
 print(f"\nSUCCESS! Saved proof to: {out_img}")
 
 # ── 7. Save the Matrix ──────────────────────────────────────
+d1 = M @ np.array([1, m1])
+d2 = M @ np.array([1, m2])
+cos_theta = np.dot(d1, d2) / (np.linalg.norm(d1) * np.linalg.norm(d2))
+angle = np.degrees(np.arccos(np.clip(cos_theta, -1, 1)))
+print(f"Post-transformation angle: {angle:.2f}° (ideal = 90.00°)")
+
 matrix_data = {
     "M_virtual_gate": M.tolist(),
     "diagonal_mean": float(m1),
     "steep_mean": float(m2),
-    "slope_ratio": float(ratio)
+    "slope_ratio": float(ratio),
+    "orthogonality_angle_deg": float(angle)
 }
 
 with open(os.path.join(out_folder, "vg_matrix.json"), "w") as f:
     json.dump(matrix_data, f, indent=4)
 
 print("Matrix saved to JSON. 1D delivery is 100% complete.")
+
+
