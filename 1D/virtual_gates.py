@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 from scipy.ndimage import affine_transform
 
 # ── 1. setup paths ──────────────────────────────────────────
@@ -76,7 +77,7 @@ plt.close()
 
 print(f"\nSUCCESS! Saved proof to: {out_img}")
 
-# ── 7. Save the Matrix ──────────────────────────────────────
+# ── 7. Save the Matrix & Validate Orthogonality ─────────────
 M_inv = np.linalg.inv(M)
 d1 = M_inv @ np.array([m1, 1.0])
 d2 = M_inv @ np.array([m2, 1.0])
@@ -84,12 +85,38 @@ cos_theta = np.dot(d1, d2) / (np.linalg.norm(d1) * np.linalg.norm(d2))
 angle = np.degrees(np.arccos(np.clip(cos_theta, -1, 1)))
 print(f"Post-transformation angle: {angle:.2f}° (ideal = 90.00°)")
 
+# Calculate Physics Matrix
+alpha_12 = m1
+alpha_21 = 1.0 / m2
+M_physics = np.array([
+    [1.0, alpha_12],
+    [alpha_21, 1.0]
+])
+
+# 95% Confidence Intervals
+n_diag = len(diag_slopes)
+n_steep = len(steep_slopes)
+
+ci_diag = stats.t.interval(0.95, df=n_diag-1, 
+                           loc=np.mean(diag_slopes), 
+                           scale=stats.sem(diag_slopes))
+
+ci_steep = stats.t.interval(0.95, df=n_steep-1, 
+                            loc=np.mean(steep_slopes), 
+                            scale=stats.sem(steep_slopes))
+
+print(f"Diagonal 95% CI: [{ci_diag[0]:.4f}, {ci_diag[1]:.4f}]")
+print(f"Steep    95% CI: [{ci_steep[0]:.4f}, {ci_steep[1]:.4f}]")
+
 matrix_data = {
-    "M_virtual_gate": M.tolist(),
+    "M_geometric": M.tolist(),
+    "M_physics": M_physics.tolist(),
     "diagonal_mean": float(m1),
     "steep_mean": float(m2),
     "slope_ratio": float(ratio),
-    "orthogonality_angle_deg": float(angle)
+    "orthogonality_angle_deg": float(angle),
+    "diagonal_95_CI": [float(ci_diag[0]), float(ci_diag[1])],
+    "steep_95_CI": [float(ci_steep[0]), float(ci_steep[1])]
 }
 
 with open(os.path.join(out_folder, "vg_matrix.json"), "w") as f:

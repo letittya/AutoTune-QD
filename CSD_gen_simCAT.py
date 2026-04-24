@@ -95,3 +95,33 @@ print(f"CSD shape         : {csd.shape}")
 print(f"Lead transitions  : {np.unique(lead_transitions).tolist()} unique values")
 print(f"Volt g1           : {VOLT_LIMITS_G1}")
 print(f"Volt g2           : {VOLT_LIMITS_G2}")
+
+import os
+
+# make a folder for the outputs if it doesn't exist
+out_dir = "CSD_generated_images"
+os.makedirs(out_dir, exist_ok=True)
+
+# save the raw clean array without the matplotlib axes for the slicing test
+clean_path_simcat = os.path.join(out_dir, "csd_clean_simCAT.png")
+
+fig_clean, ax_clean = plt.subplots(figsize=(7, 6.5))
+
+ax_clean.imshow(
+    signal_display,
+    origin="lower",
+    aspect="auto",
+    interpolation="bilinear",
+    cmap="inferno",
+    vmin=0.0,
+    vmax=1.0
+)
+
+# remove EVERYTHING visual
+ax_clean.axis("off")
+
+fig_clean.tight_layout()
+fig_clean.savefig(clean_path_simcat, dpi=200, bbox_inches="tight", pad_inches=0)
+plt.close(fig_clean)
+
+print(f"Saved clean simcats array: {clean_path_simcat}")

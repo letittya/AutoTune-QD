@@ -6,7 +6,7 @@ from scipy.signal import find_peaks
 
 # ── setup paths ─────────────────────────────────────────────
 img_folder = "CSD_generated_images"
-img_name = "csd_clean.png"
+img_name = "csd_clean_simCAT.png"
 input_path = os.path.join(img_folder, img_name)
 
 out_folder = "1D"
@@ -360,17 +360,18 @@ for i, line in enumerate(line_clusters):
     # original points
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
 
-    x_line = np.linspace(0, w, 500)
-y_line = slope * x_line + intercept
+    # 🔥 FULL THICK LINE
+    x_line = np.array([0, w])
+    y_line = slope * x_line + intercept
 
-valid = (y_line >= 0) & (y_line <= h)
-if valid.any():
-    ax.plot(x_line[valid], y_line[valid], color=colors[i], linewidth=2)
+    # No valid mask needed, just plot it! The locked axes will crop it visually.
+    ax.plot(x_line, y_line, color=colors[i], linewidth=2)
 
 # leftover noise
 if len(remaining_points) > 0:
     ax.scatter(remaining_points[:, 0], remaining_points[:, 1],
                s=3, color="white", alpha=0.2, label="noise")
+
 
 ax.set_title(f"Iterative RANSAC ({len(line_clusters)} lines)")
 ax.legend(fontsize=7)
@@ -399,26 +400,50 @@ print(f"Diagonal lines: {len(diagonal_lines)}")
 print(f"Steep lines: {len(steep_lines)}")
 
 # ── visualize both slope families ──────────────────────────
+from matplotlib.lines import Line2D
+
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
+
+# Lock axes so it perfectly frames the image
+h, w = img_smoothed.shape
+ax.set_xlim(0, w)
+ax.set_ylim(h, 0)
 
 # diagonal lines (cyan)
 for line in diagonal_lines:
     pts = line["points"]
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color="cyan")
+    
+    # Draw the solid line
+    x_line = np.array([0, w])
+    y_line = line["slope"] * x_line + line["intercept"]
+    ax.plot(x_line, y_line, color="cyan", linewidth=2, alpha=0.6)
 
 # steep lines (yellow)
 for line in steep_lines:
     pts = line["points"]
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color="yellow")
+    
+    # Draw the solid line
+    x_line = np.array([0, w])
+    y_line = line["slope"] * x_line + line["intercept"]
+    ax.plot(x_line, y_line, color="yellow", linewidth=2, alpha=0.6)
 
-ax.set_title("Two slope families")
+# --- ADD THE CUSTOM PHYSICS LEGEND ---
+legend_elements = [
+    Line2D([0], [0], color="cyan", linewidth=2, label="diagonal family (α₁₂)"),
+    Line2D([0], [0], color="yellow", linewidth=2, label="steep family (α₂₁)")
+]
+ax.legend(handles=legend_elements, fontsize=9, loc="upper right")
+
+ax.set_title("Two slope families (Physical Crosstalk)")
 
 plt.tight_layout()
 plt.savefig(os.path.join(out_folder, "two_slope_families.png"), dpi=200)
 plt.close()
 
-print("Saved two slope families visualization")
+print("Saved two slope families visualization with custom legend")
 
 
 # ── STEP 4: EXTRACT BOTH SLOPE SETS ────────────────────────
