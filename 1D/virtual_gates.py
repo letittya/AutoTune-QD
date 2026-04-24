@@ -6,7 +6,7 @@ from scipy import stats
 from scipy.ndimage import affine_transform
 
 # ── 1. setup paths ──────────────────────────────────────────
-img_path = os.path.join("CSD_generated_images", "csd_clean.png")
+img_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
 json_path = os.path.join("1D", "extracted_lines.json")
 
 out_folder = os.path.join("1D", "Virtual_Gates")

@@ -267,7 +267,7 @@ MIN_INLIERS = 60
 
 # 1. Define the rule: Pass 1 is ONLY allowed to find flat lines
 def valid_flat_line(estimator, X, y):
-    return abs(estimator.coef_[0]) < 1.5
+    return abs(estimator.coef_[0]) < 0.8 #WAS 1.5
 
 # --- PASS 1: Find Diagonal Lines (Normal X, Y) ---
 print("--- PASS 1: Diagonal Lines ---")
@@ -501,22 +501,77 @@ for l in filtered_lines:
 
 
 
-# ── SAVE RESULTS ────────────────────────────────────
+# ── SAVE RESULTS & ROBUST OUTLIER REJECTION (MAD) ───
 import json
 
+diag_raw = [l["slope"] for l in filtered_lines if l["type"] == "diagonal"]
+steep_raw = [l["slope"] for l in filtered_lines if l["type"] == "steep"]
+
+# Calculate Median and MAD for Diagonals
+diag_med = np.median(diag_raw)
+diag_mad = np.median([abs(s - diag_med) for s in diag_raw])
+diag_mad = max(diag_mad, 1e-5) # Safety fallback
+
+# Calculate Median and MAD for Steep lines
+steep_med = np.median(steep_raw)
+steep_mad = np.median([abs(s - steep_med) for s in steep_raw])
+steep_mad = max(steep_mad, 1e-5) # Safety fallback
+
+# Keep only the lines that pass the MAD filter
+truly_filtered_lines = [
+    l for l in filtered_lines 
+    if (l["type"] == "diagonal" and abs(l["slope"] - diag_med) < 2.5 * diag_mad) or 
+       (l["type"] == "steep" and abs(l["slope"] - steep_med) < 2.5 * steep_mad)
+]
+
 with open(os.path.join(out_folder, "extracted_lines.json"), "w") as f:
-    json.dump(filtered_lines, f, indent=4)
+    json.dump(truly_filtered_lines, f, indent=4)
 
-print("Saved line data → extracted_lines.json")
-
-
-
+print(f"Rejected {len(filtered_lines) - len(truly_filtered_lines)} outlier junction lines via MAD.")
+print("Saved clean line data → extracted_lines.json")
 
 
-diag_slopes = [l["slope"] for l in filtered_lines if l["type"] == "diagonal"]
-steep_slopes = [l["slope"] for l in filtered_lines if l["type"] == "steep"]
+# ── REGENERATE CLEAN ITERATIVE PLOT (CLAUDE'S OPTION 2) ───
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(img_smoothed, cmap="inferno")
+h, w = img_smoothed.shape
+ax.set_xlim(0, w)
+ax.set_ylim(h, 0)
+
+# Re-use the color mapping from earlier
+colors = plt.cm.tab10(np.linspace(0, 1, max(len(line_clusters), 1)))
+
+for i, line in enumerate(line_clusters):
+    # Claude's Fix: Skip any line not in the clean set (match by slope)
+    if not any(abs(line["slope"] - clean_l["slope"]) < 0.01 for clean_l in truly_filtered_lines):
+        continue
+        
+    pts = line["points"]
+    slope = line["slope"]
+    intercept = line["intercept"]
+
+    # Plot original points
+    ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
+    
+    # Plot thick line
+    x_line = np.array([0, w])
+    y_line = slope * x_line + intercept
+    ax.plot(x_line, y_line, color=colors[i], linewidth=2)
+
+ax.set_title(f"Iterative RANSAC (Cleaned: {len(truly_filtered_lines)} lines)")
+
+plt.tight_layout()
+# Saving as a NEW file so you keep both the raw and clean versions for your thesis
+plt.savefig(os.path.join(out_folder, "ransac_iterative_clean.png"), dpi=200)
+plt.close()
+
+print("Saved regenerated clean iterative RANSAC plot")
+
+diag_slopes = [l["slope"] for l in truly_filtered_lines if l["type"] == "diagonal"]
+steep_slopes = [l["slope"] for l in truly_filtered_lines if l["type"] == "steep"]
 
 print("\nFINAL RESULTS:")
+
 print(f"Diagonal slope (mean): {np.mean(diag_slopes):.4f}")
 print(f"Diagonal std: {np.std(diag_slopes):.4f}")
 print(f"Steep slope (mean): {np.mean(steep_slopes):.4f}")
