@@ -510,18 +510,21 @@ steep_raw = [l["slope"] for l in filtered_lines if l["type"] == "steep"]
 # Calculate Median and MAD for Diagonals
 diag_med = np.median(diag_raw)
 diag_mad = np.median([abs(s - diag_med) for s in diag_raw])
-diag_mad = max(diag_mad, 1e-5) # Safety fallback
+diag_mad = max(diag_mad, 1e-5) # Keep the 1e-5 safety fallback just to prevent divide-by-zero errors
 
 # Calculate Median and MAD for Steep lines
 steep_med = np.median(steep_raw)
 steep_mad = np.median([abs(s - steep_med) for s in steep_raw])
 steep_mad = max(steep_mad, 1e-5) # Safety fallback
 
-# Keep only the lines that pass the MAD filter
+# --- CLAUDE'S FIX: 3.5x MAD THRESHOLD ---
+MAD_THRESHOLD = 3.5
+
+# Keep only the lines that pass the 3.5x MAD filter
 truly_filtered_lines = [
     l for l in filtered_lines 
-    if (l["type"] == "diagonal" and abs(l["slope"] - diag_med) < 2.5 * diag_mad) or 
-       (l["type"] == "steep" and abs(l["slope"] - steep_med) < 2.5 * steep_mad)
+    if (l["type"] == "diagonal" and abs(l["slope"] - diag_med) < MAD_THRESHOLD * diag_mad) or 
+       (l["type"] == "steep" and abs(l["slope"] - steep_med) < MAD_THRESHOLD * steep_mad)
 ]
 
 with open(os.path.join(out_folder, "extracted_lines.json"), "w") as f:
