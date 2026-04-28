@@ -1,21 +1,30 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 
-# ── setup paths ─────────────────────────────────────────────
-img_folder = "CSD_generated_images"
-img_name = "csd_clean_simCAT.png"
-input_path = os.path.join(img_folder, img_name)
+# ── image path: CLI arg or fallback to original hardcoded ───
+if len(sys.argv) > 1:
+    # Batch mode: route outputs to testing_1D/results/<image_name>
+    input_path = sys.argv[1]
+    img_basename = os.path.splitext(os.path.basename(input_path))[0]
+    out_folder = os.path.join("testing_1D", "results", img_basename)
+else:
+    # Standalone mode: just drop everything in the main 1D folder
+    input_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
+    out_folder = "1D"
 
-out_folder = "1D"
 os.makedirs(out_folder, exist_ok=True)
 
 # ── check file ──────────────────────────────────────────────
 if not os.path.exists(input_path):
     print(f"Cannot find {input_path}")
-    exit()
+    sys.exit(1)
+
+print(f"Input : {input_path}")
+print(f"Output: {out_folder}/")
 
 # ── 1. load image ───────────────────────────────────────────
 img = plt.imread(input_path)
