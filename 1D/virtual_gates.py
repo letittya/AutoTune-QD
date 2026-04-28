@@ -6,12 +6,27 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.ndimage import affine_transform
 
-# ── 1. setup paths ──────────────────────────────────────────
-img_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
-json_path = os.path.join("1D", "extracted_lines.json")
+# ── 1. setup paths (CLI or fallback) ────────────────────────
+if len(sys.argv) > 1:
+    # Batch mode: route to testing_1D/results/<image_name>
+    img_path = sys.argv[1]
+    img_basename = os.path.splitext(os.path.basename(img_path))[0]
+    base_dir = os.path.join("testing_1D", "results", img_basename)
+    
+    json_path = os.path.join(base_dir, "extracted_lines.json")
+    out_folder = os.path.join(base_dir, "Virtual_Gates")
+else:
+    # Standalone mode: main 1D folder
+    img_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
+    json_path = os.path.join("1D", "extracted_lines.json")
+    out_folder = os.path.join("1D", "Virtual_Gates")
 
-out_folder = os.path.join("1D", "Virtual_Gates")
 os.makedirs(out_folder, exist_ok=True)
+
+# Safety check so it doesn't crash if it runs before extraction
+if not os.path.exists(img_path) or not os.path.exists(json_path):
+    print(f"Missing image or JSON for {img_path}. Skipping.")
+    sys.exit(1)
 
 # ── 2. load data ────────────────────────────────────────────
 img = plt.imread(img_path)
@@ -94,17 +109,17 @@ M_physics = np.array([
     [alpha_21, 1.0]
 ])
 
-# 95% Confidence Intervals
-n_diag = len(diag_slopes)
-n_steep = len(steep_slopes)
+# 95% Confidence Intervals (with safety catch for small samples)
+def get_ci(slopes):
+    if len(slopes) < 2:
+        return [float(slopes[0]), float(slopes[0])] if slopes else [0.0, 0.0]
+    lo, hi = stats.t.interval(0.95, df=len(slopes)-1, 
+                              loc=np.mean(slopes), 
+                              scale=stats.sem(slopes))
+    return [float(lo), float(hi)]
 
-ci_diag = stats.t.interval(0.95, df=n_diag-1, 
-                           loc=np.mean(diag_slopes), 
-                           scale=stats.sem(diag_slopes))
-
-ci_steep = stats.t.interval(0.95, df=n_steep-1, 
-                            loc=np.mean(steep_slopes), 
-                            scale=stats.sem(steep_slopes))
+ci_diag = get_ci(diag_slopes)
+ci_steep = get_ci(steep_slopes)
 
 print(f"Diagonal 95% CI: [{ci_diag[0]:.4f}, {ci_diag[1]:.4f}]")
 print(f"Steep    95% CI: [{ci_steep[0]:.4f}, {ci_steep[1]:.4f}]")
