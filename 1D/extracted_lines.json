@@ -2,50 +2,57 @@
     {
         "line_id": 1,
         "type": "diagonal",
-        "slope": 0.23922641351808963,
-        "intercept": 267.5143181906948,
-        "num_points": 156
+        "slope": 0.2732089263133009,
+        "intercept": 365.8649532209305,
+        "num_points": 200
     },
     {
         "line_id": 2,
         "type": "diagonal",
-        "slope": 0.23662713741777638,
-        "intercept": 149.44581960694902,
-        "num_points": 153
+        "slope": 0.26379394998495076,
+        "intercept": 220.02059059132816,
+        "num_points": 196
     },
     {
         "line_id": 3,
         "type": "diagonal",
-        "slope": 0.24978743170597406,
-        "intercept": 30.963576430635015,
-        "num_points": 146
+        "slope": 0.26439780223817877,
+        "intercept": 64.710904168432,
+        "num_points": 171
     },
     {
         "line_id": 4,
         "type": "diagonal",
-        "slope": 0.25209647712602,
-        "intercept": -76.87398005682034,
-        "num_points": 108
+        "slope": 0.2511265430685729,
+        "intercept": -78.27123987872518,
+        "num_points": 117
+    },
+    {
+        "line_id": 5,
+        "type": "steep",
+        "slope": 3.459062935817677,
+        "intercept": -1797.360985715454,
+        "num_points": 151
     },
     {
         "line_id": 6,
         "type": "steep",
-        "slope": 1.5225127834481436,
-        "intercept": -626.6424408139957,
-        "num_points": 181
+        "slope": 3.582599903075155,
+        "intercept": -2444.3855843177635,
+        "num_points": 170
     },
     {
         "line_id": 7,
         "type": "steep",
-        "slope": 1.4598965537312716,
-        "intercept": -792.5623064553666,
-        "num_points": 146
+        "slope": 3.9806183065188554,
+        "intercept": -3388.0260828799373,
+        "num_points": 108
     },
     {
         "line_id": 8,
         "type": "steep",
-        "slope": 1.405227941829267,
-        "intercept": -940.8287045213364,
-        "num_points": 102
+        "slope": 4.03245751500515,
+        "intercept": -4064.1098733219087,
+        "num_points": 108
     }
 ]

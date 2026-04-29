@@ -13,7 +13,7 @@ if len(sys.argv) > 1:
     out_folder = os.path.join("testing_1D", "results", img_basename)
 else:
     # Standalone mode: just drop everything in the main 1D folder
-    input_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
+    input_path = os.path.join("CSD_generated_images", "csd_clean.png")
     out_folder = "1D"
 
 os.makedirs(out_folder, exist_ok=True)
