@@ -311,7 +311,28 @@ def group_and_fit(segments, family_type, is_steep=False, center_val=250):
 final_diag_lines = group_and_fit(clean_diagonal, "diagonal", is_steep=False)
 final_steep_lines = group_and_fit(clean_steep, "steep", is_steep=True)
 
+# MAD FILTER TO KILL HONEYCOMB CROSSING LINES 
+def apply_mad_filter(physical_lines, threshold=3.5):
+    if len(physical_lines) < 3:
+        return physical_lines
+    slopes = [l["slope"] for l in physical_lines]
+    med_slope = np.median(slopes)
+    mad = np.median([abs(s - med_slope) for s in slopes])
+    mad = max(mad, 1e-5) # prevent divide by zero
+    
+    # keep only lines whose slope is within the MAD threshold
+    return [l for l in physical_lines if abs(l["slope"] - med_slope) < threshold * mad]
+
+# filter out the junk crossing lines
+final_diag_lines = apply_mad_filter(final_diag_lines)
+final_steep_lines = apply_mad_filter(final_steep_lines)
+
 final_lines = final_diag_lines + final_steep_lines
+
+
+
+
+
 
 # add line_id and force the exact dictionary key order as 1d
 ordered_final_lines = []
