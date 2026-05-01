@@ -17,7 +17,7 @@ if len(sys.argv) > 1:
     out_folder = os.path.join(base_dir, "Virtual_Gates")
 else:
     # Standalone mode: main 1D folder
-    img_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
+    img_path = os.path.join("CSD_generated_images", "csd_clean.png")
     json_path = os.path.join("1D", "extracted_lines.json")
     out_folder = os.path.join("1D", "Virtual_Gates")
 

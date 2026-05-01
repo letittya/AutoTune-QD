@@ -20,7 +20,7 @@ if len(sys.argv) > 1:
     img_basename = os.path.splitext(os.path.basename(input_path))[0]
     out_folder = os.path.join("testing_2D", "results", img_basename)
 else:
-    input_path = os.path.join("CSD_generated_images", "csd_clean_simCAT.png")
+    input_path = os.path.join("CSD_generated_images", "csd_clean.png")
     out_folder = "2D"
 
 os.makedirs(out_folder, exist_ok=True)
@@ -272,8 +272,8 @@ def group_and_fit(segments, family_type, is_steep=False, center_val=250):
             ys.extend([y0, y1])
             total_length += np.hypot(x1 - x0, y1 - y0)
             
-        # keep the aggressive 200 pixel filter
-        if total_length < 200:
+        # changed to 500
+        if total_length < 500:
             continue
             
         if is_steep:
