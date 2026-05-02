@@ -1,9 +1,12 @@
 import os
 import sys
+import json
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
+from sklearn.linear_model import RANSACRegressor
 
 # ── image path: CLI arg or fallback to original hardcoded ───
 if len(sys.argv) > 1:
@@ -213,7 +216,6 @@ print("Saved multi-slice visualization")
 
 
 # ── STEP 1: SINGLE RANSAC LINE ─────────────────────────────
-from sklearn.linear_model import RANSACRegressor
 
 X = all_points[:, 0].reshape(-1, 1)  # x (columns)
 y = all_points[:, 1]                 # y (rows)
@@ -267,7 +269,6 @@ print("Saved single RANSAC result")
 
 
 # ── STEP 2: ITERATIVE RANSAC (TWO-PASS) ────────────────────────
-from sklearn.linear_model import RANSACRegressor
 
 remaining_points = all_points.copy()
 line_clusters = []
@@ -400,7 +401,7 @@ for line in line_clusters:
     pts = line["points"]
     slope = line["slope"]   #  use stored value
 
-    if abs(slope) < 1.0:
+    if abs(slope) < 0.8:
         diagonal_lines.append(line)
     else:
         steep_lines.append(line)
@@ -409,7 +410,6 @@ print(f"Diagonal lines: {len(diagonal_lines)}")
 print(f"Steep lines: {len(steep_lines)}")
 
 # ── visualize both slope families ──────────────────────────
-from matplotlib.lines import Line2D
 
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
@@ -511,7 +511,6 @@ for l in filtered_lines:
 
 
 # ── SAVE RESULTS & ROBUST OUTLIER REJECTION (MAD) ───
-import json
 
 diag_raw = [l["slope"] for l in filtered_lines if l["type"] == "diagonal"]
 steep_raw = [l["slope"] for l in filtered_lines if l["type"] == "steep"]

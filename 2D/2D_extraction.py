@@ -232,7 +232,9 @@ print("saved clean hough families plot")
 
 # step 8: group segments into physical lines and export matching json
 
-def group_and_fit(segments, family_type, is_steep=False, center_val=250):
+def group_and_fit(segments, family_type, is_steep=False, center_val=None):
+    if center_val is None:
+        center_val = img_smoothed.shape[1] // 2 # find the image center instead of hardcoding it
     if not segments: return []
     
     for seg in segments:
@@ -300,7 +302,8 @@ def group_and_fit(segments, family_type, is_steep=False, center_val=250):
                 "type": family_type,
                 "slope": true_slope,
                 "intercept": true_intercept,
-                "num_points": int(total_length)
+                "total_pixel_length": int(total_length), # accurate name internally
+                "num_points": int(total_length) # keep for JSON compatibility with 1D
             })
         except ValueError:
             continue
