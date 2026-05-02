@@ -1,12 +1,10 @@
 import os
-import random
 import sys
 import json
 from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import matplotlib.cm as cm
 from scipy.ndimage import gaussian_filter
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
@@ -190,7 +188,6 @@ print(f"clean diagonal segments: {len(clean_diagonal)}")
 print(f"clean steep segments: {len(clean_steep)}")
 
 # step 7: visualize the clean slope families
-from matplotlib.lines import Line2D
 
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
