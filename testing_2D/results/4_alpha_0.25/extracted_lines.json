@@ -1,0 +1,58 @@
+[
+    {
+        "line_id": 1,
+        "type": "diagonal",
+        "slope": 0.25548765395058576,
+        "intercept": -84.65095458594746,
+        "num_points": 1839
+    },
+    {
+        "line_id": 2,
+        "type": "diagonal",
+        "slope": 0.2772605196754423,
+        "intercept": 57.0746956203879,
+        "num_points": 2757
+    },
+    {
+        "line_id": 3,
+        "type": "diagonal",
+        "slope": 0.2516872010048909,
+        "intercept": 236.48326028275912,
+        "num_points": 2815
+    },
+    {
+        "line_id": 4,
+        "type": "diagonal",
+        "slope": 0.2808819457138875,
+        "intercept": 375.73406329578995,
+        "num_points": 2567
+    },
+    {
+        "line_id": 5,
+        "type": "steep",
+        "slope": 3.4863093679357156,
+        "intercept": -1925.0904682131818,
+        "num_points": 2534
+    },
+    {
+        "line_id": 6,
+        "type": "steep",
+        "slope": 3.682069715573306,
+        "intercept": -2659.2229577987123,
+        "num_points": 2709
+    },
+    {
+        "line_id": 7,
+        "type": "steep",
+        "slope": 3.635980206556242,
+        "intercept": -3201.287625966184,
+        "num_points": 2567
+    },
+    {
+        "line_id": 8,
+        "type": "steep",
+        "slope": 3.829738010379542,
+        "intercept": -4038.240570527384,
+        "num_points": 2117
+    }
+]
