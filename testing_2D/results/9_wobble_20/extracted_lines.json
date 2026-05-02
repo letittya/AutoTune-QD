@@ -2,50 +2,57 @@
     {
         "line_id": 1,
         "type": "diagonal",
-        "slope": 0.2705400819892491,
-        "intercept": -103.78963274630547,
-        "num_points": 1182
+        "slope": 0.26344334839605427,
+        "intercept": -94.99850610890775,
+        "num_points": 1139
     },
     {
         "line_id": 2,
         "type": "diagonal",
-        "slope": 0.25428972239191344,
-        "intercept": 84.13233798333786,
-        "num_points": 1555
+        "slope": 0.2871398061131307,
+        "intercept": 52.35511707031699,
+        "num_points": 1900
     },
     {
         "line_id": 3,
         "type": "diagonal",
-        "slope": 0.26255175668554004,
-        "intercept": 236.21898564267644,
-        "num_points": 3010
+        "slope": 0.29117791478966293,
+        "intercept": 210.27293023944648,
+        "num_points": 2882
     },
     {
         "line_id": 4,
         "type": "diagonal",
-        "slope": 0.28864664058278294,
-        "intercept": 377.50048708541556,
-        "num_points": 2629
+        "slope": 0.27304368921896155,
+        "intercept": 378.405476867963,
+        "num_points": 2942
     },
     {
         "line_id": 5,
         "type": "steep",
-        "slope": 3.6490879941540926,
-        "intercept": -2045.3007047757644,
-        "num_points": 1603
+        "slope": 3.3573603892329915,
+        "intercept": -1794.0329087859716,
+        "num_points": 1506
     },
     {
         "line_id": 6,
         "type": "steep",
-        "slope": 3.458691125846968,
-        "intercept": -2442.629130060208,
-        "num_points": 2894
+        "slope": 3.617162003014058,
+        "intercept": -2613.1771662890305,
+        "num_points": 3100
     },
     {
         "line_id": 7,
         "type": "steep",
-        "slope": 3.575523089401893,
-        "intercept": -3168.5354967172884,
-        "num_points": 1459
+        "slope": 3.732630391839787,
+        "intercept": -3290.4812332655642,
+        "num_points": 2071
+    },
+    {
+        "line_id": 8,
+        "type": "steep",
+        "slope": 4.0104630442839095,
+        "intercept": -4199.576000487362,
+        "num_points": 1477
     }
 ]

@@ -84,14 +84,14 @@ print(f"Result: {out_img}")
 # step 5: probabilistic hough transform
 
 # lock the randomness globally so the hough transform is 100% reproducible
-random.seed(0)
-np.random.seed(0)
 
+# np.random.seed(0)  
 lines = probabilistic_hough_line(
     edges,
     threshold=75,       # minimum votes to count as a line
     line_length=100,     # min length of a segment in pixels
-    line_gap=25         # max gap to bridge broken pixels
+    line_gap=25,        # max gap to bridge broken pixels
+    rng=0 #for repoductibility 
 )
 
 print(f"found {len(lines)} raw line segments using hough transform")
@@ -111,9 +111,7 @@ for line in lines:
         slopes.append(slope)
         valid_lines.append(line)
     else:
-        # flag true vertical lines with infinity
-        slopes.append(np.inf)
-        valid_lines.append(line)
+        continue # drop vertical lines to prevent np.inf from crashing downstream MAD filters
 
 # visualize the hough line segments
 fig, ax = plt.subplots(figsize=(6, 6))
@@ -303,6 +301,7 @@ def group_and_fit(segments, family_type, is_steep=False, center_val=None):
                 "slope": true_slope,
                 "intercept": true_intercept,
                 "total_pixel_length": int(total_length), # accurate name internally
+                # 'num_points' here just represents total pixel length to match 1D JSON
                 "num_points": int(total_length) # keep for JSON compatibility with 1D
             })
         except ValueError:
@@ -314,7 +313,7 @@ def group_and_fit(segments, family_type, is_steep=False, center_val=None):
 final_diag_lines = group_and_fit(clean_diagonal, "diagonal", is_steep=False)
 final_steep_lines = group_and_fit(clean_steep, "steep", is_steep=True)
 
-# MAD FILTER TO KILL HONEYCOMB CROSSING LINES 
+# MAD FILTER 
 def apply_mad_filter(physical_lines, threshold=3.5):
     if len(physical_lines) < 3:
         return physical_lines

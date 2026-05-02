@@ -8,20 +8,20 @@ from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 from sklearn.linear_model import RANSACRegressor
 
-# ── image path: CLI arg or fallback to original hardcoded ───
+# path: CLI arg or fallback to original hardcoded file
 if len(sys.argv) > 1:
-    # Batch mode: route outputs to testing_1D/results/<image_name>
+    # batch mode
     input_path = sys.argv[1]
     img_basename = os.path.splitext(os.path.basename(input_path))[0]
     out_folder = os.path.join("testing_1D", "results", img_basename)
 else:
-    # Standalone mode: just drop everything in the main 1D folder
+    # simple mode
     input_path = os.path.join("CSD_generated_images", "csd_clean.png")
     out_folder = "1D"
 
 os.makedirs(out_folder, exist_ok=True)
 
-# ── check file ──────────────────────────────────────────────
+# check file
 if not os.path.exists(input_path):
     print(f"Cannot find {input_path}")
     sys.exit(1)
@@ -29,19 +29,19 @@ if not os.path.exists(input_path):
 print(f"Input : {input_path}")
 print(f"Output: {out_folder}/")
 
-# ── 1. load image ───────────────────────────────────────────
+# 1. load image 
 img = plt.imread(input_path)
 
-# ── 2. grayscale conversion ─────────────────────────────────
+# 2. grayscale conversion 
 if img.ndim == 3:
     img_gray = np.dot(img[..., :3], [0.2989, 0.5870, 0.1140])
 else:
     img_gray = img
 
-# ── 3. smoothing ────────────────────────────────────────────
+# 3. smoothing 
 img_smoothed = gaussian_filter(img_gray, sigma=2.0)
 
-# ── 4. slicing ──────────────────────────────────────────────
+#  4. slicing 
 h, w = img_smoothed.shape
 mid_row_idx = h // 2
 mid_col_idx = w // 2
@@ -53,14 +53,14 @@ def detect_peaks(signal):
     prominence = 0.2 * (np.max(signal) - np.min(signal))
     return find_peaks(signal, prominence=prominence, distance=15)[0]
 
-# ── 5. peak detection ───────────────────────────────────────
+# 5. peak detection 
 row_peaks = detect_peaks(row_signal)
 col_peaks = detect_peaks(col_signal)
 
 print(f"Detected row peaks: {len(row_peaks)}")
 print(f"Detected col peaks: {len(col_peaks)}")
 
-# ── preprocessing gallery ───────────────────────────────────
+# preprocessing gallery 
 fig, axs = plt.subplots(1, 4, figsize=(20, 5))
 
 axs[0].imshow(img)
@@ -89,7 +89,7 @@ plt.close()
 
 print("Saved preprocessing gallery")
 
-# ── 1D slice verification ───────────────────────────────────
+# 1D slice verification
 fig2, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
 
 ax1.plot(row_signal, color="blue")
@@ -106,7 +106,7 @@ plt.close()
 
 print("Saved 1D slice verification")
 
-# ── peak detection visualization ────────────────────────────
+# peak detection visualization 
 fig3, axs = plt.subplots(2, 1, figsize=(8, 6))
 
 axs[0].plot(row_signal, color="blue")
@@ -126,7 +126,7 @@ plt.close()
 
 print("Saved peak detection visualization")
 
-# ── overlay on image ────────────────────────────────────────
+# overlay on image 
 fig4, ax = plt.subplots(figsize=(6, 6))
 
 ax.imshow(img_smoothed, cmap="inferno")
@@ -159,7 +159,7 @@ print("Saved overlay with detected peaks")
 
 
 
-# ── MULTI-SLICE DETECTION (NEXT STEP) ───────────────────────
+# MULTI-SLICE DETECTION
 
 all_points = []
 
@@ -176,7 +176,7 @@ for r in row_indices:
         all_points.append((p, r))  # (x, y)
 
 
-# ── ADD COLUMN SLICING (FIX FOR MISSING LINES) ──────────────
+# ADD COLUMN SLICING
 
 col_indices = np.arange(margin, w - margin, 5)
 
@@ -195,7 +195,7 @@ all_points = np.unique(all_points, axis=0)
 print(f"Total detected points from multi-slice: {len(all_points)}")
 
 
-# ── visualize multi-slice points ────────────────────────────
+# visualize multi-slice points 
 fig6, ax = plt.subplots(figsize=(6, 6))
 
 ax.imshow(img_smoothed, cmap="inferno")
@@ -215,7 +215,7 @@ print("Saved multi-slice visualization")
 
 
 
-# ── STEP 1: SINGLE RANSAC LINE ─────────────────────────────
+# STEP 1: SINGLE RANSAC LINE 
 
 X = all_points[:, 0].reshape(-1, 1)  # x (columns)
 y = all_points[:, 1]                 # y (rows)
@@ -239,7 +239,7 @@ intercept = ransac.estimator_.intercept_
 
 print(f"Slope: {slope:.4f}")
 
-# ── visualize single RANSAC fit ────────────────────────────
+# visualize single RANSAC fit 
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
 
@@ -268,42 +268,42 @@ plt.close()
 print("Saved single RANSAC result")
 
 
-# ── STEP 2: ITERATIVE RANSAC (TWO-PASS) ────────────────────────
+# STEP 2: ITERATIVE RANSAC (TWO-PASS) 
 
 remaining_points = all_points.copy()
 line_clusters = []
 
 MIN_INLIERS = 60  
 
-# 1. Define the rule: Pass 1 is ONLY allowed to find flat lines
+# 1. define the rule: Pass 1 is ONLY allowed to find flat lines
 def valid_flat_line(estimator, X, y):
-    return abs(estimator.coef_[0]) < 0.8 #WAS 1.5
+    return abs(estimator.coef_[0]) < 0.8 # used to be 1.5
 
-# --- PASS 1: Find Diagonal Lines (Normal X, Y) ---
+# PASS 1: find Diagonal Lines 
 print("--- PASS 1: Diagonal Lines ---")
 while len(remaining_points) > MIN_INLIERS:
     X = remaining_points[:, 0].reshape(-1, 1)
     y = remaining_points[:, 1]
 
-    # Add the rule directly to RANSAC
+    # add the rule directly to RANSAC
     ransac = RANSACRegressor(
         residual_threshold=8.0, 
         max_trials=1000, 
         random_state=0,
-        is_model_valid=valid_flat_line # 🔥 The magic fix
+        is_model_valid=valid_flat_line
     )
     
     try:
         ransac.fit(X, y)
     except ValueError:
-        break # Breaks only if it completely runs out of valid math
+        break # breaks only if it completely runs out of valid math
 
     inlier_mask = ransac.inlier_mask_
     
     if inlier_mask.sum() < MIN_INLIERS:
-        break # Breaks if the line is too short
+        break # breaks if the line is too short
 
-    # Save the line
+    # save the line
     slope = ransac.estimator_.coef_[0]
     intercept = ransac.estimator_.intercept_
     inliers = remaining_points[inlier_mask]
@@ -316,13 +316,13 @@ while len(remaining_points) > MIN_INLIERS:
     })
     print(f"Found diagonal line with {inlier_mask.sum()} points (slope: {slope:.2f})")
     
-    # Delete points and repeat
+    # delete points and repeat
     remaining_points = remaining_points[~inlier_mask]
 
-# --- PASS 2: Find Steep Lines (Swapped Y, X) ---
+# PASS 2: Find Steep Lines 
 print("\n--- PASS 2: Steep Lines (Swapped Axes) ---")
 while len(remaining_points) > MIN_INLIERS:
-    # SWAP X AND Y HERE!
+    # swap
     X_steep = remaining_points[:, 1].reshape(-1, 1) # Y becomes input
     y_steep = remaining_points[:, 0]                # X becomes target
 
@@ -339,7 +339,7 @@ while len(remaining_points) > MIN_INLIERS:
 
     inliers = remaining_points[inlier_mask]
     
-    # Calculate the TRUE slope and intercept back in the normal coordinate system
+    # calc the TRUE slope and intercept back in the normal coordinate system
     swapped_slope = ransac.estimator_.coef_[0]
     swapped_intercept = ransac.estimator_.intercept_
     
@@ -353,7 +353,7 @@ while len(remaining_points) > MIN_INLIERS:
 
 print(f"\nTotal lines found: {len(line_clusters)}")
 
-# ── visualize iterative lines ──────────────────────────────
+# visualize iterative lines
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
 h, w = img_smoothed.shape
@@ -370,11 +370,10 @@ for i, line in enumerate(line_clusters):
     # original points
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
 
-    # 🔥 FULL THICK LINE
+    # full line
     x_line = np.array([0, w])
     y_line = slope * x_line + intercept
 
-    # No valid mask needed, just plot it! The locked axes will crop it visually.
     ax.plot(x_line, y_line, color=colors[i], linewidth=2)
 
 # leftover noise
@@ -392,7 +391,7 @@ plt.close()
 
 print("Saved iterative RANSAC result")
 
-# ── STEP 3: CLASSIFY LINES INTO TWO FAMILIES ───────────────
+# STEP 3: CLASSIFY LINES INTO TWO FAMILIES 
 
 diagonal_lines = []
 steep_lines = []
@@ -409,12 +408,12 @@ for line in line_clusters:
 print(f"Diagonal lines: {len(diagonal_lines)}")
 print(f"Steep lines: {len(steep_lines)}")
 
-# ── visualize both slope families ──────────────────────────
+# visualize both slope families 
 
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
 
-# Lock axes so it perfectly frames the image
+# lock axes
 h, w = img_smoothed.shape
 ax.set_xlim(0, w)
 ax.set_ylim(h, 0)
@@ -424,7 +423,7 @@ for line in diagonal_lines:
     pts = line["points"]
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color="cyan")
     
-    # Draw the solid line
+    # drawthe solid line
     x_line = np.array([0, w])
     y_line = line["slope"] * x_line + line["intercept"]
     ax.plot(x_line, y_line, color="cyan", linewidth=2, alpha=0.6)
@@ -434,12 +433,10 @@ for line in steep_lines:
     pts = line["points"]
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color="yellow")
     
-    # Draw the solid line
     x_line = np.array([0, w])
     y_line = line["slope"] * x_line + line["intercept"]
     ax.plot(x_line, y_line, color="yellow", linewidth=2, alpha=0.6)
 
-# --- ADD THE CUSTOM PHYSICS LEGEND ---
 legend_elements = [
     Line2D([0], [0], color="cyan", linewidth=2, label="diagonal family (α₁₂)"),
     Line2D([0], [0], color="yellow", linewidth=2, label="steep family (α₂₁)")
@@ -455,7 +452,7 @@ plt.close()
 print("Saved two slope families visualization with custom legend")
 
 
-# ── STEP 4: EXTRACT BOTH SLOPE SETS ────────────────────────
+# STEP 4: EXTRACT BOTH SLOPE SETS 
 
 final_data = []
 
@@ -490,14 +487,14 @@ for i, line in enumerate(steep_lines):
     })
 
 
-# ── PRINT FINAL RAW LINES ───────────────────────────
+# PRINT FINAL RAW LINES 
 
 print("\nFinal extracted lines:")
 for d in final_data:
     print(f"{d['type']:8s} | slope = {d['slope']:.4f} | points = {d['num_points']}")
 
 
-# ── OPTIONAL: FILTER OUT SMALL JUNK LINES ───────────
+# filter small junk lines (not needed)
 MIN_POINTS = 60
 
 filtered_lines = [l for l in final_data if l["num_points"] >= MIN_POINTS]
@@ -510,25 +507,25 @@ for l in filtered_lines:
 
 
 
-# ── SAVE RESULTS & ROBUST OUTLIER REJECTION (MAD) ───
+# SAVE RESULTS & ROBUST OUTLIER REJECTION (MAD) 
 
 diag_raw = [l["slope"] for l in filtered_lines if l["type"] == "diagonal"]
 steep_raw = [l["slope"] for l in filtered_lines if l["type"] == "steep"]
 
-# Calculate Median and MAD for Diagonals
+# calculate median and MAD for diag
 diag_med = np.median(diag_raw)
 diag_mad = np.median([abs(s - diag_med) for s in diag_raw])
-diag_mad = max(diag_mad, 1e-5) # Keep the 1e-5 safety fallback just to prevent divide-by-zero errors
+diag_mad = max(diag_mad, 1e-5) # safety fallback just to prevent divide-by-zero errors
 
-# Calculate Median and MAD for Steep lines
+# calculate median and MAD for steep 
 steep_med = np.median(steep_raw)
 steep_mad = np.median([abs(s - steep_med) for s in steep_raw])
-steep_mad = max(steep_mad, 1e-5) # Safety fallback
+steep_mad = max(steep_mad, 1e-5) # safety fallback
 
-# --- CLAUDE'S FIX: 3.5x MAD THRESHOLD ---
+# 3.5x MAD THRESHOLD
 MAD_THRESHOLD = 3.5
 
-# Keep only the lines that pass the 3.5x MAD filter
+# keep only the lines that pass the MAD filter
 truly_filtered_lines = [
     l for l in filtered_lines 
     if (l["type"] == "diagonal" and abs(l["slope"] - diag_med) < MAD_THRESHOLD * diag_mad) or 
@@ -542,18 +539,18 @@ print(f"Rejected {len(filtered_lines) - len(truly_filtered_lines)} outlier junct
 print("Saved clean line data → extracted_lines.json")
 
 
-# ── REGENERATE CLEAN ITERATIVE PLOT (CLAUDE'S OPTION 2) ───
+# CLEAN ITERATIVE PLOT 
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.imshow(img_smoothed, cmap="inferno")
 h, w = img_smoothed.shape
 ax.set_xlim(0, w)
 ax.set_ylim(h, 0)
 
-# Re-use the color mapping from earlier
+# reuse the color mapping from earlier
 colors = plt.cm.tab10(np.linspace(0, 1, max(len(line_clusters), 1)))
 
 for i, line in enumerate(line_clusters):
-    # Claude's Fix: Skip any line not in the clean set (match by slope)
+    # skip any line not in the clean set (match by slope)
     if not any(abs(line["slope"] - clean_l["slope"]) < 0.01 for clean_l in truly_filtered_lines):
         continue
         
@@ -561,10 +558,10 @@ for i, line in enumerate(line_clusters):
     slope = line["slope"]
     intercept = line["intercept"]
 
-    # Plot original points
+    # plot original points
     ax.scatter(pts[:, 0], pts[:, 1], s=6, color=colors[i])
     
-    # Plot thick line
+    # plot thick line
     x_line = np.array([0, w])
     y_line = slope * x_line + intercept
     ax.plot(x_line, y_line, color=colors[i], linewidth=2)
@@ -572,7 +569,7 @@ for i, line in enumerate(line_clusters):
 ax.set_title(f"Iterative RANSAC (Cleaned: {len(truly_filtered_lines)} lines)")
 
 plt.tight_layout()
-# Saving as a NEW file so you keep both the raw and clean versions for your thesis
+# save as new file
 plt.savefig(os.path.join(out_folder, "ransac_iterative_clean.png"), dpi=200)
 plt.close()
 

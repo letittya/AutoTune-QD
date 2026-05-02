@@ -2,50 +2,50 @@
     {
         "line_id": 1,
         "type": "diagonal",
-        "slope": 0.26660605137070276,
-        "intercept": 68.28466437237935,
-        "num_points": 2014
+        "slope": 0.26414382829745975,
+        "intercept": 66.81780781427742,
+        "num_points": 2482
     },
     {
         "line_id": 2,
         "type": "diagonal",
-        "slope": 0.2736833738419018,
-        "intercept": 223.1905988382162,
-        "num_points": 2772
+        "slope": 0.271425525929626,
+        "intercept": 223.73930298769187,
+        "num_points": 2716
     },
     {
         "line_id": 3,
         "type": "diagonal",
-        "slope": 0.27351933976732196,
-        "intercept": 383.41611238574774,
-        "num_points": 2622
+        "slope": 0.26754042058897504,
+        "intercept": 389.13034171618995,
+        "num_points": 2663
     },
     {
         "line_id": 4,
         "type": "steep",
-        "slope": 3.3749108591221493,
-        "intercept": -1816.1573992806043,
-        "num_points": 2454
+        "slope": 3.4150119959528964,
+        "intercept": -1852.2425835459,
+        "num_points": 2326
     },
     {
         "line_id": 5,
         "type": "steep",
-        "slope": 3.726656218125227,
-        "intercept": -2700.5615988474556,
-        "num_points": 2826
+        "slope": 3.670361022702861,
+        "intercept": -2654.0044647647387,
+        "num_points": 2227
     },
     {
         "line_id": 6,
         "type": "steep",
-        "slope": 3.994043019268834,
-        "intercept": -3563.8742810793865,
-        "num_points": 2503
+        "slope": 3.902559896625087,
+        "intercept": -3480.1218818504585,
+        "num_points": 2065
     },
     {
         "line_id": 7,
         "type": "steep",
-        "slope": 4.0480906643833015,
-        "intercept": -4278.203539049109,
-        "num_points": 1848
+        "slope": 4.1416466456587875,
+        "intercept": -4380.688077915184,
+        "num_points": 1842
     }
 ]
