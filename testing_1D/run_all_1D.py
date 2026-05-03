@@ -11,7 +11,7 @@ import subprocess
 import sys
  
 IMG_DIR    = os.path.join("testing_1D", "images")
-SCRIPT     = os.path.join("testing_1D", "1D_extraction.py")
+SCRIPT     = os.path.join("1D", "1D_extraction.py")
  
 images = sorted(glob.glob(os.path.join(IMG_DIR, "*.png")))
  
