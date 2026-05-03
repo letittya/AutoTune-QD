@@ -87,7 +87,6 @@ def save_clean_png(array: np.ndarray, path: str):
 
 # 2. test configs
 ALPHA_TESTS = [
-    # (id, name, cgd_off, wobble_amp, ground_truth_alpha)
     (1,  "alpha_0.10", 0.10, 35, 0.10),
     (2,  "alpha_0.15", 0.15, 35, 0.15),
     (3,  "alpha_0.20", 0.20, 35, 0.20),

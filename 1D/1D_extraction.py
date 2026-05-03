@@ -23,7 +23,7 @@ os.makedirs(out_folder, exist_ok=True)
 
 # check file
 if not os.path.exists(input_path):
-    print(f"Cannot find {input_path}")
+    print(f"Cant find {input_path}")
     sys.exit(1)
 
 print(f"Input : {input_path}")
@@ -87,7 +87,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(out_folder, "preprocessing_gallery.png"), dpi=200)
 plt.close()
 
-print("Saved preprocessing gallery")
+print("Saved preprocessing gallery!")
 
 # 1D slice verification
 fig2, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
@@ -280,7 +280,7 @@ def valid_flat_line(estimator, X, y):
     return abs(estimator.coef_[0]) < 0.8 # used to be 1.5
 
 # PASS 1: find Diagonal Lines 
-print("--- PASS 1: Diagonal Lines ---")
+print("~~~~~~~~~~ PASS 1: Diagonal Lines ~~~~~~~~~~~~~")
 while len(remaining_points) > MIN_INLIERS:
     X = remaining_points[:, 0].reshape(-1, 1)
     y = remaining_points[:, 1]
@@ -320,7 +320,7 @@ while len(remaining_points) > MIN_INLIERS:
     remaining_points = remaining_points[~inlier_mask]
 
 # PASS 2: Find Steep Lines 
-print("\n--- PASS 2: Steep Lines (Swapped Axes) ---")
+print("\n~~~~~~~~~~ PASS 2: Steep Lines ~~~~~~~~~~~~~")
 while len(remaining_points) > MIN_INLIERS:
     # swap
     X_steep = remaining_points[:, 1].reshape(-1, 1) # Y becomes input
@@ -535,8 +535,8 @@ truly_filtered_lines = [
 with open(os.path.join(out_folder, "extracted_lines.json"), "w") as f:
     json.dump(truly_filtered_lines, f, indent=4)
 
-print(f"Rejected {len(filtered_lines) - len(truly_filtered_lines)} outlier junction lines via MAD.")
-print("Saved clean line data → extracted_lines.json")
+print(f"Rejected {len(filtered_lines) - len(truly_filtered_lines)} outlier lines thru MAD.")
+print("Saved clean line data at extracted_lines.json")
 
 
 # CLEAN ITERATIVE PLOT 
@@ -587,11 +587,10 @@ print(f"Steep std: {np.std(steep_slopes):.4f}")
 
 ratio = np.mean(steep_slopes) / np.mean(diag_slopes)
 
-print(f"Slope ratio (s2/s1 = α21/α12 product proxy): {ratio:.2f}")
-print(f"  → diagonal α ≈ {np.mean(diag_slopes):.4f}  (input Cgd crosstalk was 0.25)")
-print(f"  → steep α    ≈ {1/np.mean(steep_slopes):.4f}  (expected ~0.25 from symmetry)")
-print("---------------------------------")
-print("STATUS: 1D Feature Extraction Complete.")
+print(f"Slope ratio (s2/s1 = α21/α12 product ): {ratio:.2f}")
+print(f"   diagonal α ≈ {np.mean(diag_slopes):.4f}  (input Cgd crosstalk was 0.25)")
+print(f"   steep α    ≈ {1/np.mean(steep_slopes):.4f}  (expected ~0.25 from symmetry)")
+print("1D Feature Extraction Complete!!!!!")
 
 
 

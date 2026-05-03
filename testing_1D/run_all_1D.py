@@ -1,12 +1,8 @@
 """
-run_all_1D.py
-─────────────
-Runs 1D_extraction.py on every PNG in testing_1D/images/.
-Each image gets its own subfolder under 1D/<image_name>/
-with all the usual plots + extracted_lines.json.
+
+Runs 1D_extraction.py on every img.
+Each image gets its own subfolder with all the usual plots + json.
  
-Usage:
-    python run_all_1D.py
 """
  
 import os

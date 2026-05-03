@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.ndimage import affine_transform
 
-# ── 1. setup paths (CLI or fallback) ────────────────────────
+#1. setup paths (CLI or fallback)
 if len(sys.argv) > 1:
-    # Batch mode: route to testing_1D/results/<image_name>
+    # batch mode
     img_path = sys.argv[1]
     img_basename = os.path.splitext(os.path.basename(img_path))[0]
     base_dir = os.path.join("testing_1D", "results", img_basename)
@@ -16,19 +16,19 @@ if len(sys.argv) > 1:
     json_path = os.path.join(base_dir, "extracted_lines.json")
     out_folder = os.path.join(base_dir, "Virtual_Gates")
 else:
-    # Standalone mode: main 1D folder
+    # nomral  mode: main 1D folder
     img_path = os.path.join("CSD_generated_images", "csd_clean.png")
     json_path = os.path.join("1D", "extracted_lines.json")
     out_folder = os.path.join("1D", "Virtual_Gates")
 
 os.makedirs(out_folder, exist_ok=True)
 
-# Safety check so it doesn't crash if it runs before extraction
+# safety check
 if not os.path.exists(img_path) or not os.path.exists(json_path):
     print(f"Missing image or JSON for {img_path}. Skipping.")
     sys.exit(1)
 
-# ── 2. load data ────────────────────────────────────────────
+# 2. load data 
 img = plt.imread(img_path)
 
 if img.ndim == 3:
@@ -39,21 +39,21 @@ else:
 with open(json_path, "r") as f:
     lines = json.load(f)
 
-# ── 3. compute the golden numbers ───────────────────────────
+#  3. compute the golden numbers 
 diag_slopes = [l["slope"] for l in lines if l["type"] == "diagonal"]
 steep_slopes = [l["slope"] for l in lines if l["type"] == "steep"]
 
 m1 = np.mean(diag_slopes)  
 m2 = np.mean(steep_slopes) 
 
-# --- CRITICAL FIX: Define ratio here ---
+#ratio computed 
 ratio = m2 / m1 
-# ---------------------------------------
+
 
 print(f"Loaded Physical Slopes -> Diagonal: {m1:.4f}, Steep: {m2:.4f}")
 print(f"Calculated Slope Ratio: {ratio:.2f}")
 
-# ── 4. build the virtual gate matrix ────────────────────────
+# 4. build the virtual gate matrix 
 v_col = np.array([m1, 1.0])
 v_col = v_col / np.linalg.norm(v_col)
 
@@ -68,14 +68,14 @@ M = np.array([
 print("\nVirtual Gate Transformation Matrix:")
 print(np.round(M, 4))
 
-# ── 5. apply the transformation (warp the image) ────────────
+# 5. apply the transformation 
 h, w = img_gray.shape
 center = np.array([h / 2, w / 2])
 offset = center - np.dot(M, center)
 
 warped_img = affine_transform(img_gray, M, offset=offset, order=1)
 
-# ── 6. visualize the absolute victory ───────────────────────
+# 6. visualize 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
 ax1.imshow(img_gray, cmap="inferno")
@@ -93,7 +93,7 @@ plt.close()
 
 print(f"\nSUCCESS! Saved proof to: {out_img}")
 
-# ── 7. Save the Matrix & Validate Orthogonality ─────────────
+# 7. Save the Matrix & Validate Orthogonality 
 M_inv = np.linalg.inv(M)
 d1 = M_inv @ np.array([m1, 1.0])
 d2 = M_inv @ np.array([m2, 1.0])
@@ -101,7 +101,7 @@ cos_theta = np.dot(d1, d2) / (np.linalg.norm(d1) * np.linalg.norm(d2))
 angle = np.degrees(np.arccos(np.clip(cos_theta, -1, 1)))
 print(f"Post-transformation angle: {angle:.2f}° (ideal = 90.00°)")
 
-# Calculate Physics Matrix
+# calculate Physics Matrix
 alpha_12 = m1
 alpha_21 = 1.0 / m2
 M_physics = np.array([
@@ -109,7 +109,7 @@ M_physics = np.array([
     [alpha_21, 1.0]
 ])
 
-# 95% Confidence Intervals (with safety catch for small samples)
+# 95% Confidence Intervals (with safety catch)
 def get_ci(slopes):
     if len(slopes) < 2:
         return [float(slopes[0]), float(slopes[0])] if slopes else [0.0, 0.0]

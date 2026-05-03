@@ -1,12 +1,8 @@
 """
-run_all_VGates.py
-─────────────
-Runs virtual_gates.py on every PNG in testing_1D/images/.
-Each output is saved into its corresponding subfolder:
-testing_1D/results/<image_name>/Virtual_Gates/
 
-Usage:
-    python run_all_VGates.py
+runs virtual_gates.py on every img.
+Each output is saved into its corresponding subfolder.
+
 """
 
 import os

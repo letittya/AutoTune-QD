@@ -1,8 +1,7 @@
 """
-compile_2D_summary.py
-─────────────
-Scans all 12 test folders in testing_2D/results/, extracts the physics matrices 
-and line counts, and compiles them into a single CSV for your thesis tables.
+
+scans all 12 test folders in and extracts the physics matrices 
+and line counts, and compiles them into a single CSV
 """
 
 import os
@@ -11,13 +10,13 @@ import csv
 
 RESULTS_DIR = os.path.join("testing_2D", "results")
 
-# Find all test subfolders (e.g. "1_alpha_0.10")
+# find all test subfolders 
 folders = sorted([f for f in os.listdir(RESULTS_DIR) if os.path.isdir(os.path.join(RESULTS_DIR, f))])
 
 summary_data = []
 
 for folder_name in folders:
-    # Parse ground truth from folder name 
+    # parse 
     parts = folder_name.split("_")
     if len(parts) < 3:
         continue
@@ -26,17 +25,17 @@ for folder_name in folders:
         idx = int(parts[0])
         test_type = parts[1]
         
-        # Handle the .png extension in the folder name if it's there
+        # handle the .png extension 
         val_str = parts[2].replace(".png", "")
         val = float(val_str)
     except ValueError:
         continue
     
-    # Reconstruct what the physics simulator used
+    # reconstruct what the physics simulator used
     gt_alpha = val if test_type == "alpha" else 0.25
     wobble = val if test_type == "wobble" else 35.0
 
-    # Paths to the specific JSONs for this test
+    # paths to the specific JSONs for this test
     base_dir = os.path.join(RESULTS_DIR, folder_name)
     vg_json_path = os.path.join(base_dir, "Virtual_Gates", "vg_matrix.json")
     lines_json_path = os.path.join(base_dir, "extracted_lines.json")
@@ -45,25 +44,25 @@ for folder_name in folders:
         print(f"Skipping {folder_name} (missing JSONs)")
         continue
 
-    # Load the data
+    # load the data
     with open(vg_json_path, "r") as f:
         vg_data = json.load(f)
         
     with open(lines_json_path, "r") as f:
         lines_data = json.load(f)
 
-    # Count lines that survived the MAD filter
+    # count lines that survived the MAD filter
     n_diag = sum(1 for l in lines_data if l["type"] == "diagonal")
     n_steep = sum(1 for l in lines_data if l["type"] == "steep")
 
-    # Extract physics metrics
+    # extract physics metrics
     a12 = vg_data["M_physics"][0][1]
     a21 = vg_data["M_physics"][1][0]
     
     ci_diag = vg_data["diagonal_95_CI"]
     ci_steep = vg_data["steep_95_CI"]
     
-    # Calculate widths and absolute percentage errors
+    # calculate widths and absolute percentage errors
     a12_err = 100 * abs(a12 - gt_alpha) / gt_alpha
     a21_err = 100 * abs(a21 - gt_alpha) / gt_alpha
     
@@ -86,10 +85,10 @@ for folder_name in folders:
         "Orthogonality_Deg": round(vg_data["orthogonality_angle_deg"], 2)
     })
 
-# Sort numerically by Test ID
+# sort numerically by Test ID
 summary_data.sort(key=lambda x: x["ID"])
 
-# Write everything to a clean CSV
+# write everything to a CSV
 csv_path = os.path.join(RESULTS_DIR, "benchmark_summary_2D.csv")
 if summary_data:
     keys = summary_data[0].keys()
@@ -97,7 +96,7 @@ if summary_data:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
         writer.writerows(summary_data)
-    print(f"\nSUCCESS! Aggregated {len(summary_data)} 2D tests.")
-    print(f"Summary saved to -> {csv_path}")
+    print(f"\nSUCCESS! put {len(summary_data)} 2D tests.")
+    print(f"Summary saved to {csv_path}")
 else:
     print("No data found to summarize.")

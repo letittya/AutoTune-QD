@@ -1,9 +1,7 @@
 """
-run_all_2D.py
-─────────────
-Runs 2D_extraction_3.py on every PNG in testing_1D/images/.
-Each image gets its own subfolder under testing_2D/results/<image_name>/
-with all the 2D Hough plots, extracted lines, and Virtual Gates proofs.
+
+Runs 2D_extraction.py on every img.
+Each image gets its own subfolder.
 """
 
 import os
@@ -11,10 +9,10 @@ import glob
 import subprocess
 import sys
 
-# 1. Grab images from the testing_1D folder
+# 1. grab images from the testing_1D folder
 IMG_DIR = os.path.join("testing_1D", "images")
 
-# 2. Point EXACTLY to your script inside the 2D folder
+# 2. point to script inside the 2D folder
 SCRIPT = os.path.join("2D", "2D_extraction.py")
 
 images = sorted(glob.glob(os.path.join(IMG_DIR, "*.png")))
@@ -30,10 +28,10 @@ for i, img_path in enumerate(images, 1):
     print(f"[{i:02d}/{len(images)}]  {name}")
     print(f"{'─'*50}")
 
-    # Run the 2D extraction script
+    # run the 2D extraction script
     result = subprocess.run(
         [sys.executable, SCRIPT, img_path],
-        capture_output=False,   # Let stdout print live
+        capture_output=False,   # let stdout print live
     )
 
     if result.returncode != 0:
