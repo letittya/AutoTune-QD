@@ -568,7 +568,7 @@ def run_1d_pipeline(img_gray):
         [v2[1], v1[1]]
     ])
 
-    return M, np.mean(diag_slopes), np.mean(steep_slopes), v1, v2
+    return M, np.mean(diag_slopes), np.mean(steep_slopes), v1, v2, truly_filtered_lines
 
 
 
