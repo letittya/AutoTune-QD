@@ -19,6 +19,7 @@ if len(sys.argv) > 1:
     out_folder = os.path.join("testing_2D", "results", img_basename)
 else:
     input_path = os.path.join("CSD_generated_images", "csd_clean.png")
+    #input_path = os.path.join("navigator/csd_images", "navtest_001_alpha0.251_wobble19.4.png")
     out_folder = "2D"
 
 os.makedirs(out_folder, exist_ok=True)
