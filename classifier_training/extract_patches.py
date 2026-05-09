@@ -120,17 +120,27 @@ for lbl_file in label_files:
     rng  = np.random.default_rng(seed=data["seed"])
     states = data["all_states"]
 
-    # positive: (1,1) cell interior 
-    target = data.get("target_pixel")
-    if target is None:
-        print(f"  SKIP (no (1,1)): {data['image_name']}")
-        skipped.append(lbl_file)
-        continue
+    # POSITIVES
+    CLOSED_CELLS = ["1_1", "2_2", "1_2", "2_1"] 
+    
+    JITTER_OFFSETS = [
+        (0, 0),
+        (-15, 0), (15, 0), (0, -15), (0, 15),
+        (-10, -10), (10, 10), (-10, 10), (10, -10)
+    ]
 
-    t_col, t_row = target["col_px"], target["row_px"]
-    pos_patch = extract_patch(img, t_col, t_row)
-    if pos_patch is None:
-        print(f"  SKIP (positive OOB): {data['image_name']}")
+    image_pos_patches = []
+    for state_key in CLOSED_CELLS:
+        state = states.get(state_key)
+        if state is None:
+            continue
+        for dx, dy in JITTER_OFFSETS:
+            p = extract_patch(img, state["col_px"] + dx, state["row_px"] + dy)
+            if p is not None:
+                image_pos_patches.append(p)
+
+    if not image_pos_patches:
+        print(f"  SKIP (no closed cells found): {data['image_name']}")
         skipped.append(lbl_file)
         continue
 
@@ -147,6 +157,21 @@ for lbl_file in label_files:
         skipped.append(lbl_file)
         continue
 
+    # hard negatives 2 & 3: (0,1) and (1,0) - the states visited right before (1,1)
+    adj_negs = []
+    for state_key in ["0_1", "1_0"]:
+        state = states.get(state_key)
+        if state is None:
+            continue
+        adj_patch = extract_patch(img, state["col_px"], state["row_px"])
+        if adj_patch is not None:
+            adj_negs.append(adj_patch)
+
+    #  random negatives 1 & 2: must land on a visible line 
+    # we need t_col and t_row so the random patches know what area to avoid!
+    target = data.get("target_pixel")
+    t_col, t_row = target["col_px"], target["row_px"]
+
     #  random negatives 1 & 2: must land on a visible line 
     neg_rand1 = find_random_line_patch(img, t_col, t_row, rng)
     neg_rand2 = find_random_line_patch(img, t_col, t_row, rng)
@@ -159,13 +184,16 @@ for lbl_file in label_files:
         rand_negs = [neg_rand1, neg_rand2]
 
     #  collect 
-    all_positive.append(pos_patch)
+    #  collect 
+    all_positive.extend(image_pos_patches)      
     all_negative.append(neg_void)
+    all_negative.extend(adj_negs)              
     all_negative.extend(rand_negs)
 
+    # update print statement to reflect the new counts
     print(f"  ✓ {data['image_name']}  "
-          f"pos=1  neg={1 + len(rand_negs)}  "
-          f"pos_mean={pos_patch.mean():.3f}  void_mean={neg_void.mean():.3f}")
+          f"pos={len(image_pos_patches)}  neg={1 + len(adj_negs) + len(rand_negs)}  "
+          f"pos_mean={image_pos_patches[0].mean():.3f}  void_mean={neg_void.mean():.3f}")
 
 #  stack and save 
 patches_pos = np.stack(all_positive, axis=0)   # (N, 85, 85)
