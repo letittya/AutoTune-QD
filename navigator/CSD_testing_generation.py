@@ -98,7 +98,13 @@ def generate_csd(cgd_off: float, wobble_amplitude: float, seed: int):
     return signal_display, n_open_wobbled
 
 def save_clean_png(array: np.ndarray, path: str):
-    plt.imsave(path, array, cmap="inferno")
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=100)  # 5 inches * 100 dpi = 500px exactly
+    ax.imshow(array, origin="upper", aspect="equal",
+              interpolation="bilinear", cmap="inferno", vmin=0.0, vmax=1.0)
+    ax.axis("off")
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    fig.savefig(path, dpi=100, bbox_inches=None, pad_inches=0)
+    plt.close(fig)
 
 def compute_pixel_labels(n_open_wobbled: np.ndarray) -> dict:
     n1 = n_open_wobbled[:, :, 0].astype(int)

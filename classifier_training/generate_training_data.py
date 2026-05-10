@@ -119,7 +119,13 @@ def save_clean_png(array: np.ndarray, path: str):
     plt.imsave bypasses matplotlib figure formatting entirely.
     Row 0 of array = top of saved PNG — matches np.where() coordinates 1:1.
     """
-    plt.imsave(path, array, cmap="inferno")
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=100)  # 5 inches * 100 dpi = 500px exactly
+    ax.imshow(array, origin="upper", aspect="equal",
+              interpolation="bilinear", cmap="inferno", vmin=0.0, vmax=1.0)
+    ax.axis("off")
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    fig.savefig(path, dpi=100, bbox_inches=None, pad_inches=0)
+    plt.close(fig)
 
 
 def compute_pixel_labels(n_open_wobbled: np.ndarray) -> dict:
