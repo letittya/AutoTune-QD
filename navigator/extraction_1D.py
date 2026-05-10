@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 from sklearn.linear_model import RANSACRegressor
 
-def run_1d_pipeline(img_gray):
+def run_1d_pipeline(img_gray, show_plots=True): #to supress the plots i added dis
 
     # 3. smoothing 
     img_smoothed = gaussian_filter(img_gray, sigma=2.0)
@@ -33,6 +33,7 @@ def run_1d_pipeline(img_gray):
 
     # preprocessing gallery 
     fig, axs = plt.subplots(1, 4, figsize=(20, 5))
+    plt.close()
 
     axs[0].imshow(img_gray)
     axs[0].set_title("1. Raw input")
@@ -62,6 +63,7 @@ def run_1d_pipeline(img_gray):
 
     # 1D slice verification
     fig2, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
+    plt.close()
 
     ax1.plot(row_signal, color="blue")
     ax1.set_title(f"Horizontal slice (row {mid_row_idx})")
@@ -79,6 +81,7 @@ def run_1d_pipeline(img_gray):
 
     # peak detection visualization 
     fig3, axs = plt.subplots(2, 1, figsize=(8, 6))
+    plt.close()
 
     axs[0].plot(row_signal, color="blue")
     axs[0].scatter(row_peaks, row_signal[row_peaks], color="red", s=40)
@@ -99,6 +102,7 @@ def run_1d_pipeline(img_gray):
 
     # overlay on image 
     fig4, ax = plt.subplots(figsize=(6, 6))
+    plt.close()
 
     ax.imshow(img_smoothed, cmap="inferno")
 
@@ -168,6 +172,7 @@ def run_1d_pipeline(img_gray):
 
     # visualize multi-slice points 
     fig6, ax = plt.subplots(figsize=(6, 6))
+    plt.close()
 
     ax.imshow(img_smoothed, cmap="inferno")
 
@@ -212,6 +217,7 @@ def run_1d_pipeline(img_gray):
 
     # visualize single RANSAC fit 
     fig, ax = plt.subplots(figsize=(6, 6))
+    plt.close()
     ax.imshow(img_smoothed, cmap="inferno")
 
     # inliers (line)
@@ -357,7 +363,10 @@ def run_1d_pipeline(img_gray):
     ax.legend(fontsize=7)
 
     plt.tight_layout()
-    plt.show()
+    if show_plots:
+        plt.show()
+    else:
+        plt.close()
 
     print("Saved iterative RANSAC result")
 
@@ -416,7 +425,10 @@ def run_1d_pipeline(img_gray):
     ax.set_title("Two slope families (Physical Crosstalk)")
 
     plt.tight_layout()
-    plt.show()
+    if show_plots:
+        plt.show()
+    else:
+        plt.close()
 
     print("Displayed two slope families visualization with custom legend")
 
@@ -535,6 +547,7 @@ def run_1d_pipeline(img_gray):
 
     plt.tight_layout()
     plt.show()
+
 
     print("Displayed regenerated clean iterative RANSAC plot")
 

@@ -10,8 +10,10 @@ from skimage.transform import probabilistic_hough_line
 from sklearn.linear_model import RANSACRegressor
 
 
-def run_2d_pipeline(img_gray):
+def run_2d_pipeline(img_gray, show_plots=True):
 
+    if not show_plots:
+        plt.ioff()
     # step 2: identical to 1D, preprocessing steps
 
     # smoothing (sigma=2.0)
@@ -28,6 +30,7 @@ def run_2d_pipeline(img_gray):
     # step 4. visualize
     # increase height slightly to make room for titles
     fig, axs = plt.subplots(1, 3, figsize=(18, 7))
+    plt.close()
 
     axs[0].imshow(img_gray, cmap="gray")
     axs[0].set_title("1. Grayscale Baseline", fontsize=16, pad=20)
@@ -81,6 +84,7 @@ def run_2d_pipeline(img_gray):
 
     # visualize the hough line segments
     fig, ax = plt.subplots(figsize=(6, 6))
+    plt.close()
     ax.imshow(img_smoothed, cmap="inferno")
 
     # lock axes to the image size
@@ -153,6 +157,7 @@ def run_2d_pipeline(img_gray):
     # step 7: visualize the clean slope families
 
     fig, ax = plt.subplots(figsize=(6, 6))
+    plt.close()
     ax.imshow(img_smoothed, cmap="inferno")
 
     h, w = img_smoothed.shape
@@ -394,7 +399,10 @@ def run_2d_pipeline(img_gray):
     ax.axis("off")
 
     plt.tight_layout()
-    plt.show()
+    if show_plots:
+        plt.show()
+    else:
+        plt.close()
 
     print(f"saved reconstructed physical lines plot")
 
@@ -406,6 +414,7 @@ def run_2d_pipeline(img_gray):
     warped_img = affine_transform(img_gray, M, offset=offset, order=1)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    plt.close()
 
     ax1.imshow(img_gray, cmap="inferno")
     ax1.set_title("Physical Gates (Skewed)", fontsize=14)
@@ -420,6 +429,7 @@ def run_2d_pipeline(img_gray):
 
     # generate the extra color-mapped physical lines legend 
     fig, ax = plt.subplots(figsize=(9, 6))
+    plt.close()
     ax.imshow(img_smoothed, cmap="inferno")
 
     h_img, w_img = img_smoothed.shape
@@ -459,4 +469,5 @@ def run_2d_pipeline(img_gray):
     print(f"saved proof")
     print("\n2d pipeline complete. saved everything to your folders.")
 
+    plt.ion()
     return M, float(m1), float(m2), matrix_data, final_lines
