@@ -546,8 +546,10 @@ def run_1d_pipeline(img_gray, show_plots=True): #to supress the plots i added di
     ax.set_title(f"Iterative RANSAC (Cleaned: {len(truly_filtered_lines)} lines)")
 
     plt.tight_layout()
-    plt.show()
-
+    if show_plots:
+        plt.show()
+    else:
+        plt.close()
 
     print("Displayed regenerated clean iterative RANSAC plot")
 
